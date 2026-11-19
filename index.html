@@ -723,18 +723,13 @@
     .total-box {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 4px;
     }
     .total-top {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
       gap: 8px;
-    }
-    .total-left {
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
     }
     .total-box span { display: block; font-size: 0.7rem; color: var(--totals-muted); text-transform: uppercase; }
     .total-pct {
@@ -745,7 +740,7 @@
     .total-pct.over {
       color: var(--prot-over);
     }
-    .total-box strong { font-size: 1.25rem; line-height: 1.1; }
+    .total-box strong { font-size: 1.25rem; line-height: 1.15; }
 
     .prog-track {
       width: 100%;
@@ -753,6 +748,7 @@
       background: var(--bar-track);
       border-radius: 999px;
       overflow: hidden;
+      margin-top: 2px;
     }
     .prog-fill {
       height: 100%;
@@ -1123,24 +1119,20 @@
         <div class="totals-bar stacked-bars">
           <div class="total-box">
             <div class="total-top">
-              <div class="total-left">
-                <span>Total Calories</span>
-                <strong id="dailyTotalCal">0 kcal</strong>
-              </div>
+              <span>Total Calories</span>
               <span id="calPctText" class="total-pct">0%</span>
             </div>
+            <strong id="dailyTotalCal">0 kcal</strong>
             <div class="prog-track">
               <div id="calProgressFill" class="prog-fill cal-fill"></div>
             </div>
           </div>
           <div class="total-box">
             <div class="total-top">
-              <div class="total-left">
-                <span>Total Protein</span>
-                <strong id="dailyTotalProt">0.0 g</strong>
-              </div>
+              <span>Total Protein</span>
               <span id="protPctText" class="total-pct">0%</span>
             </div>
+            <strong id="dailyTotalProt">0.0 g</strong>
             <div class="prog-track">
               <div id="protProgressFill" class="prog-fill prot-fill"></div>
             </div>
