@@ -723,7 +723,7 @@
     .total-box {
       display: flex;
       flex-direction: column;
-      gap: 1px;
+      gap: 3px;
     }
     .total-top {
       display: flex;
@@ -731,24 +731,22 @@
       align-items: baseline;
       gap: 8px;
     }
-    .bar-pct-row {
+    .num-pct-line {
       display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      margin-top: 2px;
-      margin-bottom: 0;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
     }
     .total-box span { display: block; font-size: 0.7rem; color: var(--totals-muted); text-transform: uppercase; }
     .total-pct {
-      font-size: 0.7rem;
+      font-size: 0.74rem;
       font-weight: 800;
       color: var(--totals-text);
-      line-height: 1;
     }
     .total-pct.over {
       color: var(--prot-over);
     }
-    .total-box strong { font-size: 1.25rem; line-height: 1.15; }
+    .total-box strong { font-size: 1.25rem; line-height: 1.1; }
 
     .prog-track {
       width: 100%;
@@ -756,7 +754,6 @@
       background: var(--bar-track);
       border-radius: 999px;
       overflow: hidden;
-      margin-top: 1px;
     }
     .prog-fill {
       height: 100%;
@@ -1129,8 +1126,8 @@
             <div class="total-top">
               <span>Total Calories</span>
             </div>
-            <strong id="dailyTotalCal">0 kcal</strong>
-            <div class="bar-pct-row">
+            <div class="num-pct-line">
+              <strong id="dailyTotalCal">0 kcal</strong>
               <span id="calPctText" class="total-pct">0%</span>
             </div>
             <div class="prog-track">
@@ -1141,8 +1138,8 @@
             <div class="total-top">
               <span>Total Protein</span>
             </div>
-            <strong id="dailyTotalProt">0.0 g</strong>
-            <div class="bar-pct-row">
+            <div class="num-pct-line">
+              <strong id="dailyTotalProt">0.0 g</strong>
               <span id="protPctText" class="total-pct">0%</span>
             </div>
             <div class="prog-track">
