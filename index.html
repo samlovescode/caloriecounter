@@ -839,7 +839,7 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 8px 12px;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
     .rem-item {
       display: flex;
@@ -862,8 +862,55 @@
     .rem-num.cal-mid { color: var(--rem-mid); }
     .rem-num.cal-low { color: var(--rem-low); }
 
+    /* Tab 3 Quick Log Custom Bar & Drawer */
+    .daily-quick-bar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .log-custom-btn {
+      padding: 5px 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .log-custom-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .daily-custom-drawer {
+      display: none;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+    }
+    .daily-custom-drawer.open {
+      display: block;
+    }
+    .daily-custom-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 6px;
+      align-items: center;
+    }
+    .daily-custom-form input {
+      padding: 7px 8px;
+      font-size: 0.85rem;
+    }
+    .daily-custom-form button {
+      padding: 7px 12px;
+      font-size: 0.8rem;
+    }
+
     .chart-list { display: flex; flex-direction: column; gap: 10px; }
-    #dailyChartList { margin-top: 20px; }
+    #dailyChartList { margin-top: 4px; }
     .chart-card {
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -1223,6 +1270,17 @@
           </div>
         </div>
 
+        <div class="daily-quick-bar">
+          <button type="button" class="log-custom-btn" onclick="toggleDailyCustomDrawer()">+ log custom</button>
+        </div>
+        <div id="dailyCustomDrawer" class="daily-custom-drawer">
+          <form class="daily-custom-form" onsubmit="submitDailyCustomLog(event)">
+            <input type="number" id="dailyCustCal" placeholder="Calories" min="0" step="any" required />
+            <input type="number" id="dailyCustProt" placeholder="Protein (g)" min="0" step="any" required />
+            <button type="submit" class="btn-primary">Log</button>
+          </form>
+        </div>
+
         <div id="dailyChartList" class="chart-list"></div>
       </div>
     </div>
@@ -1442,6 +1500,38 @@
     targetsExpanded = !targetsExpanded;
     document.getElementById("targetsBody").classList.toggle("collapsed", !targetsExpanded);
     document.getElementById("targetsArrow").textContent = targetsExpanded ? "▾" : "▸";
+  }
+
+  function toggleDailyCustomDrawer() {
+    const drawer = document.getElementById("dailyCustomDrawer");
+    const willOpen = !drawer.classList.contains("open");
+    drawer.classList.toggle("open", willOpen);
+    if (willOpen) {
+      document.getElementById("dailyCustCal").focus();
+    }
+  }
+
+  function submitDailyCustomLog(e) {
+    e.preventDefault();
+    const calInput = document.getElementById("dailyCustCal");
+    const protInput = document.getElementById("dailyCustProt");
+    const cal = Math.max(0, parseFloat(calInput.value) || 0);
+    const prot = Math.max(0, parseFloat(protInput.value) || 0);
+
+    const mealName = getTimeBasedDefaultName();
+    userDailyLogs[currentUser].push({
+      id: crypto.randomUUID(),
+      name: mealName,
+      calories: cal,
+      protein: prot,
+      qty: 1,
+      editing: false
+    });
+
+    renderDailyChart();
+    persistDailyLog();
+    e.target.reset();
+    document.getElementById("dailyCustomDrawer").classList.remove("open");
   }
 
   function persistActiveChart() {
