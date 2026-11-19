@@ -624,46 +624,33 @@
       gap: 4px;
     }
 
-    /* Emphasized Weight Box for Weight-Based Items */
-    .weight-emphasis-bar {
-      display: flex;
+    /* Glowing Weight Box for Weight-Based Items */
+    .weight-glow-wrap {
+      display: inline-flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-top: 8px;
-      padding: 7px 10px;
-      background: var(--meal-bg);
-      border: 1.5px solid var(--meal);
-      border-radius: 8px;
-    }
-    .weight-emphasis-label {
+      gap: 6px;
+      margin-top: 7px;
       font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--meal-text);
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
+      font-weight: 600;
+      color: var(--text-secondary);
     }
-    .weight-emphasis-input-wrap {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .weight-emphasis-input {
+    .weight-glow-input {
       width: 92px;
       padding: 6px 8px;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       font-weight: 700;
-      border: 1.5px solid var(--meal);
+      border: 1.5px solid var(--primary);
       border-radius: 7px;
       background: var(--card);
       color: var(--text);
       text-align: right;
+      box-shadow: 0 0 10px rgba(37, 99, 235, 0.32);
+      transition: box-shadow 0.2s, border-color 0.2s;
     }
-    .weight-emphasis-input:focus {
+    .weight-glow-input:focus {
       outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+      border-color: var(--meal);
+      box-shadow: 0 0 14px rgba(20, 184, 166, 0.5);
     }
 
     /* Hidden Sync Button via CSS ID */
@@ -1950,8 +1937,8 @@
       const totProt = items.reduce((s, i) => s + i.protein * i.defaultQty, 0);
       const hasWeightItems = items.some(i => i.isByWeight);
       const metaText = hasWeightItems && totCal === 0 && totProt === 0
-        ? `By weight`
-        : `${Math.round(totCal)} kcal • ${totProt.toFixed(1)}g P${hasWeightItems ? " + weight" : ""}`;
+        ? `⚖️ by weight`
+        : `${Math.round(totCal)} kcal • ${totProt.toFixed(1)}g P${hasWeightItems ? " • ⚖️ by weight" : ""}`;
 
       const wrapper = document.createElement("div");
       wrapper.className = "item-btn-wrapper";
@@ -1967,18 +1954,9 @@
 
     paginatedSingles.forEach(item => {
       const displayQty = item.defaultQty > 1 ? ` (x${item.defaultQty})` : "";
-      let metaText;
-      if (item.isByWeight) {
-        if (item.refWeight !== null && (item.refCalories !== null || item.refProtein !== null)) {
-          const refCalDisp = item.refCalories !== null ? Math.round(item.refCalories) : 0;
-          const refProtDisp = item.refProtein !== null ? Number(item.refProtein).toFixed(1).replace(/\.0$/, '') : 0;
-          metaText = `⚖️ By weight (${refCalDisp} kcal • ${refProtDisp}g P / ${item.refWeight}g)`;
-        } else {
-          metaText = `⚖️ By weight`;
-        }
-      } else {
-        metaText = `${Math.round(item.calories * item.defaultQty)} kcal • ${(item.protein * item.defaultQty).toFixed(1)}g P`;
-      }
+      const metaText = item.isByWeight
+        ? `⚖️ by weight`
+        : `${Math.round(item.calories * item.defaultQty)} kcal • ${(item.protein * item.defaultQty).toFixed(1)}g P`;
 
       const wrapper = document.createElement("div");
       wrapper.className = "item-btn-wrapper";
@@ -2177,12 +2155,7 @@
   function formatItemMeta(item) {
     const hasW = item.customWeight !== "" && item.customWeight !== null && item.customWeight !== undefined;
     if (item.isByWeight && !hasW) {
-      if (item.refWeight !== null && (item.refCalories !== null || item.refProtein !== null)) {
-        const refCalDisp = item.refCalories !== null ? Math.round(item.refCalories) : 0;
-        const refProtDisp = item.refProtein !== null ? Number(item.refProtein).toFixed(1).replace(/\.0$/, '') : 0;
-        return `Enter weight (${refCalDisp} kcal • ${refProtDisp}g P per ${item.refWeight}g)`;
-      }
-      return `Enter weight (set Ref serving in Edit)`;
+      return `⚖️ by weight`;
     }
     const wLabel = hasW ? ` (${item.customWeight}g)` : "";
     return `${Math.round(item.calories * item.qty)} kcal • ${(item.protein * item.qty).toFixed(1)}g P${wLabel}`;
@@ -2766,12 +2739,9 @@
         const rpVal = entry.refProtein ?? "";
         const isRefOpen = !!entry.refExpanded;
         const weightBoxHTML = entry.isByWeight ? `
-          <div class="weight-emphasis-bar">
-            <span class="weight-emphasis-label">⚖️ Weight</span>
-            <div class="weight-emphasis-input-wrap">
-              <input id="emph-weight-${entry.id}" type="number" class="weight-emphasis-input" step="any" min="0" placeholder="0" value="${wVal}" oninput="updateWeight('${entry.id}', this.value)" />
-              <span style="font-size:0.82rem; font-weight:700; color:var(--meal-text);">g</span>
-            </div>
+          <div class="weight-glow-wrap">
+            <span>Weight (g):</span>
+            <input id="emph-weight-${entry.id}" type="number" class="weight-glow-input" step="any" min="0" placeholder="0" value="${wVal}" oninput="updateWeight('${entry.id}', this.value)" />
           </div>
         ` : "";
 
@@ -2780,6 +2750,7 @@
             <div>
               <div class="row-title" id="title-${entry.id}">${entry.name}</div>
               <div id="meta-${entry.id}" style="font-size:0.8rem; color:var(--muted);">${formatItemMeta(entry)}</div>
+              ${weightBoxHTML}
             </div>
             <div class="row-controls">
               <div class="qty-badge">
@@ -2791,7 +2762,6 @@
               <button class="icon-btn del" onclick="removeEntry('${entry.id}')">✕</button>
             </div>
           </div>
-          ${weightBoxHTML}
           ${entry.editing ? `
             <div class="edit-inputs">
               <label>Name: <input type="text" class="edit-name-input" value="${entry.name.replace(/"/g, '&quot;')}" oninput="updateItemName('${entry.id}', this.value)"></label>
@@ -2823,12 +2793,9 @@
           const subRpVal = sub.refProtein ?? "";
           const isSubRefOpen = !!sub.refExpanded;
           const subWeightBoxHTML = sub.isByWeight ? `
-            <div class="weight-emphasis-bar">
-              <span class="weight-emphasis-label">⚖️ Weight</span>
-              <div class="weight-emphasis-input-wrap">
-                <input id="emph-weight-${sub.id}" type="number" class="weight-emphasis-input" step="any" min="0" placeholder="0" value="${subWVal}" oninput="updateWeight('${sub.id}', this.value, '${entry.id}')" />
-                <span style="font-size:0.82rem; font-weight:700; color:var(--meal-text);">g</span>
-              </div>
+            <div class="weight-glow-wrap">
+              <span>Weight (g):</span>
+              <input id="emph-weight-${sub.id}" type="number" class="weight-glow-input" step="any" min="0" placeholder="0" value="${subWVal}" oninput="updateWeight('${sub.id}', this.value, '${entry.id}')" />
             </div>
           ` : "";
 
@@ -2838,6 +2805,7 @@
                 <div>
                   <div id="title-${sub.id}" style="font-weight:600; font-size:0.88rem;">${sub.name}</div>
                   <div id="meta-${sub.id}" style="font-size:0.76rem; color:var(--muted);">${formatItemMeta(sub)}</div>
+                  ${subWeightBoxHTML}
                 </div>
                 <div class="row-controls">
                   <div class="qty-badge">
@@ -2849,7 +2817,6 @@
                   <button class="icon-btn del" onclick="removeEntry('${sub.id}', '${entry.id}')">✕</button>
                 </div>
               </div>
-              ${subWeightBoxHTML}
               ${sub.editing ? `
                 <div class="edit-inputs">
                   <label>Name: <input type="text" class="edit-name-input" value="${sub.name.replace(/"/g, '&quot;')}" oninput="updateItemName('${sub.id}', this.value, '${entry.id}')"></label>
@@ -2875,7 +2842,7 @@
 
         const optionsHTML = presetSingles.map((p, i) => {
           const optLabel = p.isByWeight
-            ? `${p.name} (by weight)`
+            ? `${p.name} (⚖️ by weight)`
             : `${p.name} (${Math.round(p.calories * p.defaultQty)} kcal)`;
           return `<option value="${i}">${optLabel}</option>`;
         }).join("");
