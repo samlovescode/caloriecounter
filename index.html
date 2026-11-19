@@ -38,7 +38,7 @@
       --user-kehara-border: #d8b4fe;
     }
 
-    /* THEME 2: MIDNIGHT DARK */
+    /* THEME 2: DARK */
     [data-theme="dark"] {
       --bg: #0b1120;
       --card: #131c31;
@@ -70,8 +70,8 @@
       --user-kehara-border: #6b21a8;
     }
 
-    /* THEME 3: DARK PURPLE HAZE */
-    [data-theme="purple-haze"] {
+    /* THEME 3: PURPLE HAZE */
+    [data-theme="haze"] {
       --bg: #120b24;
       --card: #1c1236;
       --surface: #281a4d;
@@ -102,38 +102,6 @@
       --user-kehara-border: #86198f;
     }
 
-    /* THEME 4: EMERALD NIGHT */
-    [data-theme="emerald-night"] {
-      --bg: #071713;
-      --card: #0e241e;
-      --surface: #16352c;
-      --surface-alt: #0a1c17;
-      --border: #1f473b;
-      --input-border: #2a5c4d;
-      --text: #ecfdf5;
-      --text-secondary: #a7f3d0;
-      --muted: #6ee7b7;
-      --primary: #10b981;
-      --primary-hover: #059669;
-      --meal: #06b6d4;
-      --meal-bg: #0c2b33;
-      --meal-border: #155e75;
-      --meal-text: #67e8f9;
-      --danger: #f87171;
-      --danger-bg: #2b1315;
-      --danger-border: #7f1d1d;
-      --totals-bg: #030d0a;
-      --totals-text: #ecfdf5;
-      --totals-muted: #6ee7b7;
-      --nav-bg: #091c17;
-
-      --user-usamuel: #34d399;
-      --user-usamuel-bg: #063729;
-      --user-kehara: #c084fc;
-      --user-kehara-bg: #2b1347;
-      --user-kehara-border: #6b21a8;
-    }
-
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     body { margin: 0; padding: 12px; padding-bottom: 76px; background: var(--bg); color: var(--text); transition: background 0.2s, color 0.2s; }
 
@@ -144,11 +112,9 @@
     /* Center Tab 1 vertically on tall screens */
     #tab1.active {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       min-height: calc(100vh - 88px);
-      gap: 14px;
     }
 
     /* Bottom Navigation Bar (Android Native Feel) */
@@ -213,7 +179,7 @@
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 22px;
+      padding: 24px;
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
       color: var(--text);
     }
@@ -356,46 +322,50 @@
       margin-top: 4px;
     }
 
-    /* Theme Selector Inside Calculator Tab */
-    .theme-section {
-      margin-top: 14px;
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
-    }
-    .theme-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
-    }
-    .theme-btn {
+    /* Compact Inline Theme Bubbles */
+    .theme-row {
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .theme-label {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .theme-bubbles {
+      display: inline-flex;
       gap: 6px;
-      padding: 7px 10px;
-      border-radius: 8px;
-      border: 1.5px solid var(--border);
+    }
+    .theme-bubble {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
       background: var(--surface-alt);
       color: var(--text-secondary);
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.15s;
     }
-    .theme-btn:hover {
-      border-color: var(--primary);
-    }
-    .theme-btn.active {
+    .theme-bubble.active {
       border-color: var(--primary);
       background: var(--surface);
       color: var(--primary);
       font-weight: 700;
     }
-    .theme-dot {
-      width: 11px;
-      height: 11px;
+    .bubble-dot {
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       flex-shrink: 0;
-      border: 1px solid rgba(255,255,255,0.25);
     }
 
     /* Preset & Chart Specific Styles */
@@ -779,7 +749,7 @@
     (function() {
       try {
         const savedTheme = localStorage.getItem('calorie_suite_theme');
-        if (savedTheme && savedTheme !== 'light') {
+        if (savedTheme === 'dark' || savedTheme === 'haze') {
           document.documentElement.setAttribute('data-theme', savedTheme);
         }
       } catch (e) {}
@@ -832,25 +802,20 @@
       </div>
       <div id="calcFeedback" class="calc-feedback"></div>
 
-      <!-- APP THEME SELECTOR -->
-      <div class="theme-section">
-        <div class="section-label" style="margin-bottom: 8px;">3. App Theme</div>
-        <div class="theme-grid">
-          <button type="button" class="theme-btn" data-theme-choice="light" onclick="setTheme('light')">
-            <span class="theme-dot" style="background: #f8fafc; border-color: #94a3b8;"></span>
-            <span>Clean Light</span>
+      <div class="theme-row">
+        <span class="theme-label">Theme</span>
+        <div class="theme-bubbles">
+          <button type="button" class="theme-bubble" data-theme-choice="clear" onclick="setTheme('clear')">
+            <span class="bubble-dot" style="background: #e2e8f0; border: 1px solid #94a3b8;"></span>
+            <span>Clear</span>
           </button>
-          <button type="button" class="theme-btn" data-theme-choice="dark" onclick="setTheme('dark')">
-            <span class="theme-dot" style="background: #0b1120;"></span>
-            <span>Midnight Dark</span>
+          <button type="button" class="theme-bubble" data-theme-choice="dark" onclick="setTheme('dark')">
+            <span class="bubble-dot" style="background: #3b82f6;"></span>
+            <span>Dark</span>
           </button>
-          <button type="button" class="theme-btn" data-theme-choice="purple-haze" onclick="setTheme('purple-haze')">
-            <span class="theme-dot" style="background: linear-gradient(135deg, #a855f7, #ec4899);"></span>
-            <span>Purple Haze</span>
-          </button>
-          <button type="button" class="theme-btn" data-theme-choice="emerald-night" onclick="setTheme('emerald-night')">
-            <span class="theme-dot" style="background: linear-gradient(135deg, #10b981, #06b6d4);"></span>
-            <span>Emerald Night</span>
+          <button type="button" class="theme-bubble" data-theme-choice="haze" onclick="setTheme('haze')">
+            <span class="bubble-dot" style="background: #c084fc;"></span>
+            <span>Haze</span>
           </button>
         </div>
       </div>
@@ -1012,27 +977,32 @@
   const USER_STORAGE_KEY = "calorie_suite_current_user";
   const ACTIVE_CHART_STORAGE_KEY = "calorie_suite_active_chart";
 
-  function setTheme(themeName) {
-    if (!themeName || themeName === 'light') {
-      document.documentElement.removeAttribute('data-theme');
-      themeName = 'light';
-    } else {
-      document.documentElement.setAttribute('data-theme', themeName);
-    }
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, themeName);
-    } catch (e) {}
-    updateThemeButtons(themeName);
+  function normalizeTheme(val) {
+    if (val === 'dark' || val === 'haze') return val;
+    return 'clear';
   }
 
-  function updateThemeButtons(activeTheme) {
-    document.querySelectorAll('.theme-btn').forEach(btn => {
+  function setTheme(themeName) {
+    const chosen = normalizeTheme(themeName);
+    if (chosen === 'clear') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', chosen);
+    }
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, chosen);
+    } catch (e) {}
+    updateThemeBubbles(chosen);
+  }
+
+  function updateThemeBubbles(activeTheme) {
+    document.querySelectorAll('.theme-bubble').forEach(btn => {
       btn.classList.toggle('active', btn.getAttribute('data-theme-choice') === activeTheme);
     });
   }
 
-  // Initialize theme button active state
-  updateThemeButtons(localStorage.getItem(THEME_STORAGE_KEY) || 'light');
+  // Initialize theme bubble active state
+  updateThemeBubbles(normalizeTheme(localStorage.getItem(THEME_STORAGE_KEY)));
 
   // Tab Switching Logic
   function switchTab(tabNum) {
