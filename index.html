@@ -29,8 +29,9 @@
       --totals-muted: #94a3b8;
       --nav-bg: #ffffff;
       --bar-track: #e2e8f0;
-      --cal-ok: #16a34a;
-      --cal-over: #ef4444;
+      --rem-high: #16a34a;
+      --rem-mid: #d97706;
+      --rem-low: #ef4444;
       --prot-ok: #0d9488;
       --prot-over: #f59e0b;
       --radius: 12px;
@@ -68,8 +69,9 @@
       --totals-muted: #94a3b8;
       --nav-bg: #0f172a;
       --bar-track: #1e293b;
-      --cal-ok: #22c55e;
-      --cal-over: #f87171;
+      --rem-high: #22c55e;
+      --rem-mid: #facc15;
+      --rem-low: #f87171;
       --prot-ok: #2dd4bf;
       --prot-over: #fbbf24;
 
@@ -105,8 +107,9 @@
       --totals-muted: #c4b5fd;
       --nav-bg: #150c2b;
       --bar-track: #281a4d;
-      --cal-ok: #22c55e;
-      --cal-over: #fb7185;
+      --rem-high: #22c55e;
+      --rem-mid: #facc15;
+      --rem-low: #fb7185;
       --prot-ok: #e879f9;
       --prot-over: #fbbf24;
 
@@ -650,40 +653,23 @@
       box-shadow: 0 1px 4px rgba(124, 58, 237, 0.16);
     }
 
-    /* Target Inputs & Progress Section in Tab 3 */
-    .target-config-box {
-      background: var(--surface-alt);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 12px;
-      margin-bottom: 10px;
-    }
-    .target-config-title {
-      font-size: 0.78rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--muted);
-      margin-bottom: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    /* Compact Target Inputs & Remaining + Bars in Tab 3 */
     .target-inputs-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
+      margin-bottom: 8px;
     }
     .target-field label {
       display: block;
-      font-size: 0.76rem;
+      font-size: 0.72rem;
       font-weight: 600;
-      color: var(--text-secondary);
-      margin-bottom: 4px;
+      color: var(--muted);
+      margin-bottom: 3px;
     }
     .target-field input {
-      padding: 7px 9px;
-      font-size: 0.9rem;
+      padding: 6px 8px;
+      font-size: 0.88rem;
       font-weight: 600;
     }
 
@@ -696,71 +682,64 @@
       gap: 10px;
       background: var(--totals-bg);
       color: var(--totals-text);
-      padding: 12px 14px;
+      padding: 10px 12px;
       border-radius: 10px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       border: 1px solid var(--border);
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     }
-    .total-box span { display: block; font-size: 0.72rem; color: var(--totals-muted); text-transform: uppercase; }
-    .total-box strong { font-size: 1.35rem; }
+    .total-box span { display: block; font-size: 0.7rem; color: var(--totals-muted); text-transform: uppercase; }
+    .total-box strong { font-size: 1.25rem; }
 
-    .remaining-bar {
+    .remaining-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .rem-card {
       background: var(--surface-alt);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 10px 12px;
-      margin-bottom: 10px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 6px;
     }
-    .rem-box span {
-      display: block;
-      font-size: 0.72rem;
+    .rem-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 4px;
+    }
+    .rem-label {
+      font-size: 0.7rem;
       font-weight: 700;
       color: var(--muted);
       text-transform: uppercase;
     }
-    .rem-box strong {
-      display: block;
-      font-size: 1.05rem;
+    .rem-pct {
+      font-size: 0.74rem;
       font-weight: 800;
-      margin-top: 2px;
       color: var(--text);
     }
-    .rem-box strong.over-target {
-      color: var(--cal-over);
+    .rem-pct.over {
+      color: var(--prot-over);
     }
+    .rem-num {
+      font-size: 1.15rem;
+      font-weight: 800;
+      line-height: 1.15;
+      color: var(--text);
+    }
+    .rem-num.cal-high { color: var(--rem-high); }
+    .rem-num.cal-mid { color: var(--rem-mid); }
+    .rem-num.cal-low { color: var(--rem-low); }
 
-    .progress-bars-box {
-      background: var(--surface-alt);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 12px;
-      margin-bottom: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .prog-item-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.78rem;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-    .prog-pct {
-      font-weight: 800;
-      color: var(--text);
-    }
-    .prog-pct.over {
-      color: var(--cal-over);
-    }
     .prog-track {
       width: 100%;
-      height: 11px;
+      height: 8px;
       background: var(--bar-track);
       border-radius: 999px;
       overflow: hidden;
@@ -771,18 +750,11 @@
       border-radius: 999px;
       transition: width 0.25s ease, background-color 0.25s ease;
     }
-    .prog-fill.cal-fill {
-      background: var(--cal-ok);
-    }
-    .prog-fill.cal-fill.over {
-      background: var(--cal-over);
-    }
-    .prog-fill.prot-fill {
-      background: var(--prot-ok);
-    }
-    .prog-fill.prot-fill.over {
-      background: var(--prot-over);
-    }
+    .prog-fill.cal-fill { background: var(--rem-high); }
+    .prog-fill.cal-fill.mid { background: var(--rem-mid); }
+    .prog-fill.cal-fill.low { background: var(--rem-low); }
+    .prog-fill.prot-fill { background: var(--prot-ok); }
+    .prog-fill.prot-fill.over { background: var(--prot-over); }
 
     .chart-list { display: flex; flex-direction: column; gap: 10px; }
     .chart-card {
@@ -1087,24 +1059,18 @@
           <button class="icon-btn del" onclick="clearDailyLog()">Reset</button>
         </div>
 
-        <div class="target-config-box">
-          <div class="target-config-title">
-            <span>🎯 Calorie and Protein Target</span>
-            <span id="targetProfileLabel" style="font-size:0.72rem; color:var(--primary);">Usamuel</span>
+        <div class="target-inputs-grid">
+          <div class="target-field">
+            <label for="calTargetInput">Calorie Target</label>
+            <input type="number" id="calTargetInput" placeholder="e.g. 2100" min="0" step="any" oninput="updateUserTargets()">
           </div>
-          <div class="target-inputs-grid">
-            <div class="target-field">
-              <label for="calTargetInput">Calorie Target (kcal)</label>
-              <input type="number" id="calTargetInput" placeholder="e.g. 2100" min="0" step="any" oninput="updateUserTargets()">
-            </div>
-            <div class="target-field">
-              <label for="protTargetInput">Protein Target (g)</label>
-              <input type="number" id="protTargetInput" placeholder="e.g. 140" min="0" step="any" oninput="updateUserTargets()">
-            </div>
+          <div class="target-field">
+            <label for="protTargetInput">Protein Target</label>
+            <input type="number" id="protTargetInput" placeholder="e.g. 140" min="0" step="any" oninput="updateUserTargets()">
           </div>
         </div>
 
-        <div class="totals-bar" style="margin-bottom: 10px;">
+        <div class="totals-bar">
           <div class="total-box">
             <span>Total Calories</span>
             <strong id="dailyTotalCal">0 kcal</strong>
@@ -1115,32 +1081,24 @@
           </div>
         </div>
 
-        <div class="remaining-bar">
-          <div class="rem-box">
-            <span>Remaining Calories</span>
-            <strong id="remCalText">—</strong>
-          </div>
-          <div class="rem-box">
-            <span>Remaining Protein</span>
-            <strong id="remProtText">—</strong>
-          </div>
-        </div>
-
-        <div class="progress-bars-box">
-          <div>
-            <div class="prog-item-header">
-              <span>Calories to Target</span>
-              <span id="calPctText" class="prog-pct">0%</span>
+        <div class="remaining-grid">
+          <div class="rem-card">
+            <div class="rem-top-row">
+              <span class="rem-label">Remaining Calories</span>
+              <span id="calPctText" class="rem-pct">0%</span>
             </div>
+            <div id="remCalText" class="rem-num">—</div>
             <div class="prog-track">
               <div id="calProgressFill" class="prog-fill cal-fill"></div>
             </div>
           </div>
-          <div>
-            <div class="prog-item-header">
-              <span>Protein to Target</span>
-              <span id="protPctText" class="prog-pct">0%</span>
+
+          <div class="rem-card">
+            <div class="rem-top-row">
+              <span class="rem-label">Remaining Protein</span>
+              <span id="protPctText" class="rem-pct">0%</span>
             </div>
+            <div id="remProtText" class="rem-num">—</div>
             <div class="prog-track">
               <div id="protProgressFill" class="prog-fill prot-fill"></div>
             </div>
@@ -1375,7 +1333,6 @@
 
   function syncTargetInputsForUser() {
     const t = userTargets[currentUser] || { calories: "", protein: "" };
-    document.getElementById("targetProfileLabel").textContent = currentUser;
     document.getElementById("calTargetInput").value = t.calories;
     document.getElementById("protTargetInput").value = t.protein;
   }
@@ -1856,10 +1813,7 @@
       totalProt += entry.protein * entry.qty;
     });
 
-    const roundedCal = Math.round(totalCal);
-    const roundedProt = Math.round(totalProt * 10) / 10;
-
-    document.getElementById("dailyTotalCal").textContent = roundedCal + " kcal";
+    document.getElementById("dailyTotalCal").textContent = Math.round(totalCal) + " kcal";
     document.getElementById("dailyTotalProt").textContent = totalProt.toFixed(1) + " g";
 
     const t = userTargets[currentUser] || { calories: "", protein: "" };
@@ -1870,30 +1824,33 @@
     const calPctEl = document.getElementById("calPctText");
     const calFillEl = document.getElementById("calProgressFill");
 
+    remCalEl.classList.remove("cal-high", "cal-mid", "cal-low");
+    calFillEl.classList.remove("mid", "low");
+
     if (!isNaN(calTarget) && calTarget > 0) {
       const remCal = Math.round(calTarget - totalCal);
+      const remPct = (remCal / calTarget) * 100;
       const calPct = Math.round((totalCal / calTarget) * 100);
-      const isOverCal = totalCal > calTarget;
 
-      if (isOverCal) {
-        remCalEl.textContent = `${Math.abs(remCal)} kcal over`;
-        remCalEl.classList.add("over-target");
-      } else {
-        remCalEl.textContent = `${remCal} kcal left`;
-        remCalEl.classList.remove("over-target");
-      }
-
+      remCalEl.textContent = `${remCal}`;
       calPctEl.textContent = `${calPct}%`;
-      calPctEl.classList.toggle("over", isOverCal);
+      calPctEl.classList.toggle("over", totalCal > calTarget);
       calFillEl.style.width = `${Math.min(100, Math.max(0, (totalCal / calTarget) * 100))}%`;
-      calFillEl.classList.toggle("over", isOverCal);
+
+      if (remPct <= 10) {
+        remCalEl.classList.add("cal-low");
+        calFillEl.classList.add("low");
+      } else if (remPct < 60) {
+        remCalEl.classList.add("cal-mid");
+        calFillEl.classList.add("mid");
+      } else {
+        remCalEl.classList.add("cal-high");
+      }
     } else {
-      remCalEl.textContent = "Set target";
-      remCalEl.classList.remove("over-target");
+      remCalEl.textContent = "—";
       calPctEl.textContent = "—";
       calPctEl.classList.remove("over");
       calFillEl.style.width = "0%";
-      calFillEl.classList.remove("over");
     }
 
     const remProtEl = document.getElementById("remProtText");
@@ -1905,21 +1862,13 @@
       const protPct = Math.round((totalProt / protTarget) * 100);
       const isOverProt = totalProt > protTarget;
 
-      if (isOverProt) {
-        remProtEl.textContent = `${Math.abs(remProt).toFixed(1)}g over`;
-        remProtEl.classList.add("over-target");
-      } else {
-        remProtEl.textContent = `${remProt.toFixed(1)}g left`;
-        remProtEl.classList.remove("over-target");
-      }
-
+      remProtEl.textContent = `${remProt.toFixed(1).replace(/\.0$/, '')}`;
       protPctEl.textContent = `${protPct}%`;
       protPctEl.classList.toggle("over", isOverProt);
       protFillEl.style.width = `${Math.min(100, Math.max(0, (totalProt / protTarget) * 100))}%`;
       protFillEl.classList.toggle("over", isOverProt);
     } else {
-      remProtEl.textContent = "Set target";
-      remProtEl.classList.remove("over-target");
+      remProtEl.textContent = "—";
       protPctEl.textContent = "—";
       protPctEl.classList.remove("over");
       protFillEl.style.width = "0%";
