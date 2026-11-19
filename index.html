@@ -322,35 +322,37 @@
       margin-top: 4px;
     }
 
-    /* Compact Inline Theme Bubbles */
+    /* Compact Inline Theme Bubbles + Tiny Force Update Button */
     .theme-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      gap: 6px;
       margin-top: 6px;
       padding-top: 8px;
       border-top: 1px solid var(--border);
     }
     .theme-label {
-      font-size: 0.76rem;
+      font-size: 0.74rem;
       font-weight: 700;
       color: var(--muted);
     }
-    .theme-bubbles {
+    .theme-controls {
       display: inline-flex;
-      gap: 6px;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
     }
     .theme-bubble {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      padding: 4px 9px;
+      gap: 4px;
+      padding: 3px 7px;
       border-radius: 999px;
       border: 1px solid var(--border);
       background: var(--surface-alt);
       color: var(--text-secondary);
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.15s;
@@ -362,10 +364,28 @@
       font-weight: 700;
     }
     .bubble-dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       flex-shrink: 0;
+    }
+    .force-update-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px 7px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.68rem;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1.1;
+    }
+    .force-update-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
     }
 
     /* Preset & Chart Specific Styles */
@@ -804,7 +824,7 @@
 
       <div class="theme-row">
         <span class="theme-label">Theme</span>
-        <div class="theme-bubbles">
+        <div class="theme-controls">
           <button type="button" class="theme-bubble" data-theme-choice="clear" onclick="setTheme('clear')">
             <span class="bubble-dot" style="background: #e2e8f0; border: 1px solid #94a3b8;"></span>
             <span>Clear</span>
@@ -817,6 +837,7 @@
             <span class="bubble-dot" style="background: #c084fc;"></span>
             <span>Haze</span>
           </button>
+          <button type="button" class="force-update-btn" onclick="forceAppUpdate()" title="Force reload latest app code (keeps local data)">↻</button>
         </div>
       </div>
     </div>
@@ -976,6 +997,26 @@
   const THEME_STORAGE_KEY = "calorie_suite_theme";
   const USER_STORAGE_KEY = "calorie_suite_current_user";
   const ACTIVE_CHART_STORAGE_KEY = "calorie_suite_active_chart";
+
+  // Forces a fresh load of the hosted app without clearing localStorage (theme, profile, chart, daily logs)
+  async function forceAppUpdate() {
+    const fb = document.getElementById('calcFeedback');
+    if (fb) fb.textContent = 'Checking for latest update...';
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.update()));
+      }
+    } catch (e) {}
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('_u', Date.now().toString());
+    window.location.replace(url.toString());
+  }
 
   function normalizeTheme(val) {
     if (val === 'dark' || val === 'haze') return val;
