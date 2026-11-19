@@ -927,7 +927,33 @@
       flex-wrap: wrap;
     }
     .row-title { font-weight: 600; font-size: 0.94rem; color: var(--text); }
+    .row-title.clickable { cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+    .row-title.clickable:hover { color: var(--primary); }
     .row-controls { display: flex; align-items: center; gap: 6px; }
+
+    .daily-breakdown {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: var(--surface-alt);
+      border-left: 2px solid var(--primary);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .daily-breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .daily-breakdown-meta {
+      color: var(--muted);
+      font-size: 0.76rem;
+      white-space: nowrap;
+    }
 
     .qty-badge {
       display: inline-flex;
@@ -1200,8 +1226,8 @@
           <div id="customFormBody" class="accordion-body collapsed custom-form-body">
             <form class="custom-form" onsubmit="addCustomToChart(event)">
               <input type="text" id="custName" placeholder="Name (e.g. Oats 50g)" required />
-              <input type="number" id="custCal" placeholder="Calories" min="0" step="any" required />
-              <input type="number" id="custProt" placeholder="Protein (g)" min="0" step="any" required />
+              <input type="number" id="custCal" placeholder="Calories" min="0" step="any" />
+              <input type="number" id="custProt" placeholder="Protein (g)" min="0" step="any" />
               <button type="submit" class="btn-primary">Add</button>
             </form>
           </div>
@@ -1568,7 +1594,9 @@
       calories: cal,
       protein: prot,
       qty: 1,
-      editing: false
+      editing: false,
+      expanded: false,
+      subItems: []
     });
 
     renderDailyChart();
@@ -1945,8 +1973,10 @@
   function addCustomToChart(e) {
     e.preventDefault();
     const rawName = document.getElementById("custName").value.trim();
-    const totalCal = parseFloat(document.getElementById("custCal").value) || 0;
-    const totalProt = parseFloat(document.getElementById("custProt").value) || 0;
+    const rawCal = document.getElementById("custCal").value.trim();
+    const rawProt = document.getElementById("custProt").value.trim();
+    const totalCal = rawCal === "" ? 0 : (parseFloat(rawCal) || 0);
+    const totalProt = rawProt === "" ? 0 : (parseFloat(rawProt) || 0);
     if (!rawName) return;
     const parsed = parseQuantityFromName(rawName, totalCal, totalProt);
     addSingleToChart({
@@ -2172,30 +2202,68 @@
 
   function addChartToTotal() {
     let totalCal = 0, totalProt = 0;
+    const breakdownItems = [];
+
     activeChart.forEach(entry => {
       if (entry.kind === "single") {
-        totalCal += entry.calories * entry.qty;
-        totalProt += entry.protein * entry.qty;
+        const lineCal = entry.calories * entry.qty;
+        const lineProt = entry.protein * entry.qty;
+        totalCal += lineCal;
+        totalProt += lineProt;
+        breakdownItems.push({
+          name: entry.name,
+          qty: entry.qty,
+          weight: entry.customWeight || "",
+          calories: lineCal,
+          protein: lineProt
+        });
       } else if (entry.kind === "meal") {
-        const mealCal = entry.items.reduce((s, sub) => s + sub.calories * sub.qty, 0);
-        const mealProt = entry.items.reduce((s, sub) => s + sub.protein * sub.qty, 0);
-        totalCal += mealCal * entry.qty;
-        totalProt += mealProt * entry.qty;
+        entry.items.forEach(sub => {
+          const totalSubQty = sub.qty * entry.qty;
+          const lineCal = sub.calories * totalSubQty;
+          const lineProt = sub.protein * totalSubQty;
+          totalCal += lineCal;
+          totalProt += lineProt;
+          breakdownItems.push({
+            name: sub.name,
+            qty: totalSubQty,
+            weight: sub.customWeight || "",
+            calories: lineCal,
+            protein: lineProt
+          });
+        });
       }
     });
 
-    if (totalCal <= 0 && totalProt <= 0) {
+    if (totalCal <= 0 && totalProt <= 0 && breakdownItems.length === 0) {
       alert("Item Calculation is empty.");
       return;
     }
 
     const mealName = getTimeBasedDefaultName();
     const log = userDailyLogs[currentUser];
-    log.push({ id: crypto.randomUUID(), name: mealName, calories: totalCal, protein: totalProt, qty: 1, editing: false });
+    log.push({
+      id: crypto.randomUUID(),
+      name: mealName,
+      calories: totalCal,
+      protein: totalProt,
+      qty: 1,
+      editing: false,
+      expanded: false,
+      subItems: breakdownItems
+    });
 
     renderDailyChart();
     persistDailyLog();
-    clearChart();
+  }
+
+  function toggleDailyBreakdown(id) {
+    const log = userDailyLogs[currentUser];
+    const target = log.find(c => c.id === id);
+    if (target && Array.isArray(target.subItems) && target.subItems.length > 0) {
+      target.expanded = !target.expanded;
+      renderDailyChart();
+    }
   }
 
   function changeDailyQty(id, delta) {
@@ -2219,7 +2287,7 @@
     const item = log.find(c => c.id === id);
     if (item && val.trim()) {
       item.name = val.trim();
-      const titleEl = document.getElementById(`daily-title-${id}`);
+      const titleEl = document.getElementById(`daily-title-text-${id}`);
       if (titleEl) titleEl.textContent = item.name;
       persistDailyLog();
     }
@@ -2332,11 +2400,32 @@
     log.forEach(entry => {
       const card = document.createElement("div");
       card.className = "chart-card";
+      const hasSubItems = Array.isArray(entry.subItems) && entry.subItems.length > 0;
+      const isExpanded = hasSubItems && !!entry.expanded;
+
+      const breakdownHTML = isExpanded ? `
+        <div class="daily-breakdown">
+          ${entry.subItems.map(sub => {
+            const totalSubQty = sub.qty * entry.qty;
+            const qtyLabel = totalSubQty > 1 ? ` (x${totalSubQty})` : "";
+            const wLabel = sub.weight !== "" && sub.weight !== null && sub.weight !== undefined ? ` • ${sub.weight}g` : "";
+            return `
+              <div class="daily-breakdown-row">
+                <span>${sub.name}${qtyLabel}${wLabel}</span>
+                <span class="daily-breakdown-meta">${Math.round(sub.calories * entry.qty)} kcal • ${(sub.protein * entry.qty).toFixed(1)}g P</span>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      ` : "";
 
       card.innerHTML = `
         <div class="row-main">
           <div>
-            <div class="row-title" id="daily-title-${entry.id}">${entry.name}</div>
+            <div class="row-title ${hasSubItems ? "clickable" : ""}" id="daily-title-${entry.id}" ${hasSubItems ? `onclick="toggleDailyBreakdown('${entry.id}')"` : ""}>
+              <span id="daily-title-text-${entry.id}">${entry.name}</span>
+              ${hasSubItems ? `<span style="font-size:0.76rem; color:var(--muted);">${isExpanded ? "▾" : "▸"}</span>` : ""}
+            </div>
             <div style="font-size:0.8rem; color:var(--muted);">${Math.round(entry.calories * entry.qty)} kcal • ${(entry.protein * entry.qty).toFixed(1)}g P</div>
           </div>
           <div class="row-controls">
@@ -2349,6 +2438,7 @@
             <button class="icon-btn del" onclick="removeDailyEntry('${entry.id}')">✕</button>
           </div>
         </div>
+        ${breakdownHTML}
         ${entry.editing ? `<div class="edit-inputs"><label>Name: <input type="text" class="edit-name-input" value="${entry.name.replace(/"/g, '&quot;')}" oninput="updateDailyName('${entry.id}', this.value)"></label><label>Cal: <input type="number" value="${Math.round(entry.calories * 10) / 10}" oninput="updateDailyMacros('${entry.id}', 'calories', this.value)"></label><label>Prot: <input type="number" step="0.1" value="${Math.round(entry.protein * 10) / 10}" oninput="updateDailyMacros('${entry.id}', 'protein', this.value)"></label></div>` : ""}
       `;
       list.appendChild(card);
