@@ -607,6 +607,65 @@
     }
     .btn-small-add:hover { opacity: 0.92; }
 
+    .added-total-toast {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--meal);
+      background: var(--meal-bg);
+      border: 1px solid var(--meal-border);
+      padding: 4px 9px;
+      border-radius: 7px;
+      display: none;
+      white-space: nowrap;
+    }
+    .added-total-toast.show {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Emphasized Weight Box for Weight-Based Items */
+    .weight-emphasis-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 7px 10px;
+      background: var(--meal-bg);
+      border: 1.5px solid var(--meal);
+      border-radius: 8px;
+    }
+    .weight-emphasis-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--meal-text);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .weight-emphasis-input-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .weight-emphasis-input {
+      width: 92px;
+      padding: 6px 8px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      border: 1.5px solid var(--meal);
+      border-radius: 7px;
+      background: var(--card);
+      color: var(--text);
+      text-align: right;
+    }
+    .weight-emphasis-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+    }
+
     /* Hidden Sync Button via CSS ID */
     #syncBtn { display: none; }
 
@@ -1225,7 +1284,7 @@
           </button>
           <div id="customFormBody" class="accordion-body collapsed custom-form-body">
             <form class="custom-form" onsubmit="addCustomToChart(event)">
-              <input type="text" id="custName" placeholder="Name (e.g. Oats 50g)" required />
+              <input type="text" id="custName" placeholder="Name (e.g. Fries)" required />
               <input type="number" id="custCal" placeholder="Calories" min="0" step="any" />
               <input type="number" id="custProt" placeholder="Protein (g)" min="0" step="any" />
               <button type="submit" class="btn-primary">Add</button>
@@ -1234,6 +1293,7 @@
         </div>
 
         <div style="display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-top: 14px; margin-bottom: 6px; flex-wrap: wrap;">
+          <span id="addedTotalToast" class="added-total-toast">✓ Added to total</span>
           <button class="btn-small-add" onclick="addChartToTotal()">+ Add to Total</button>
           <button class="icon-btn save" onclick="openSaveDrawer()">💾 Add to Sheet</button>
           <button class="icon-btn del" onclick="clearChart()">Clear</button>
@@ -1524,6 +1584,7 @@
 
   let sectionState = { meals: false, singles: false, customForm: false };
   let targetsExpanded = false;
+  let addedToastTimer = null;
 
   // Pagination state (8 items max per page)
   const ITEMS_PER_PAGE = 8;
@@ -1648,19 +1709,28 @@
     const rows = [];
     for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, "").trim());
-      if (cols.length >= 5 && cols[2]) {
+      if (cols.length >= 3 && cols[2]) {
+        const rawCalStr = cols[3] !== undefined ? cols[3] : "";
+        const rawProtStr = cols[4] !== undefined ? cols[4] : "";
+        const hasDirectMacros = rawCalStr !== "" || rawProtStr !== "";
         const refWeight = cols.length >= 6 && cols[5] !== "" ? parseFloat(cols[5]) : null;
         const refCalories = cols.length >= 7 && cols[6] !== "" ? parseFloat(cols[6]) : null;
         const refProtein = cols.length >= 8 && cols[7] !== "" ? parseFloat(cols[7]) : null;
+        const validRefWeight = !isNaN(refWeight) && refWeight > 0 ? refWeight : null;
+        const validRefCalories = !isNaN(refCalories) && refCalories >= 0 ? refCalories : null;
+        const validRefProtein = !isNaN(refProtein) && refProtein >= 0 ? refProtein : null;
+        const isByWeight = !hasDirectMacros;
+
         rows.push({
           type: cols[0].toLowerCase(),
-          group: cols[1],
+          group: cols[1] || "",
           name: cols[2],
-          calories: parseFloat(cols[3]) || 0,
-          protein: parseFloat(cols[4]) || 0,
-          refWeight: !isNaN(refWeight) && refWeight > 0 ? refWeight : null,
-          refCalories: !isNaN(refCalories) && refCalories >= 0 ? refCalories : null,
-          refProtein: !isNaN(refProtein) && refProtein >= 0 ? refProtein : null
+          calories: parseFloat(rawCalStr) || 0,
+          protein: parseFloat(rawProtStr) || 0,
+          refWeight: validRefWeight,
+          refCalories: validRefCalories,
+          refProtein: validRefProtein,
+          isByWeight: isByWeight
         });
       }
     }
@@ -1702,7 +1772,8 @@
             protein: parsed.unitProt,
             refWeight: r.refWeight,
             refCalories: r.refCalories,
-            refProtein: r.refProtein
+            refProtein: r.refProtein,
+            isByWeight: r.isByWeight
           });
         } else if (r.type === "meal" && r.group) {
           if (!presetMeals[r.group]) presetMeals[r.group] = [];
@@ -1714,7 +1785,8 @@
             protein: parsed.unitProt,
             refWeight: r.refWeight,
             refCalories: r.refCalories,
-            refProtein: r.refProtein
+            refProtein: r.refProtein,
+            isByWeight: r.isByWeight
           });
         }
       });
@@ -1876,13 +1948,17 @@
       const items = presetMeals[groupName];
       const totCal = items.reduce((s, i) => s + i.calories * i.defaultQty, 0);
       const totProt = items.reduce((s, i) => s + i.protein * i.defaultQty, 0);
+      const hasWeightItems = items.some(i => i.isByWeight);
+      const metaText = hasWeightItems && totCal === 0 && totProt === 0
+        ? `By weight`
+        : `${Math.round(totCal)} kcal • ${totProt.toFixed(1)}g P${hasWeightItems ? " + weight" : ""}`;
 
       const wrapper = document.createElement("div");
       wrapper.className = "item-btn-wrapper";
       wrapper.innerHTML = `
         <button class="item-btn meal-btn" onclick="addMealToChart('${groupName.replace(/'/g, "\\'")}')">
           <div class="name">🍽️ ${groupName}</div>
-          <div class="meta">${Math.round(totCal)} kcal • ${totProt.toFixed(1)}g P</div>
+          <div class="meta">${metaText}</div>
         </button>
         <button class="delete-preset-btn" title="Delete meal from Google Sheet" onclick="deletePreset('meal', '${groupName.replace(/'/g, "\\'")}')">🗑️</button>
       `;
@@ -1891,12 +1967,25 @@
 
     paginatedSingles.forEach(item => {
       const displayQty = item.defaultQty > 1 ? ` (x${item.defaultQty})` : "";
+      let metaText;
+      if (item.isByWeight) {
+        if (item.refWeight !== null && (item.refCalories !== null || item.refProtein !== null)) {
+          const refCalDisp = item.refCalories !== null ? Math.round(item.refCalories) : 0;
+          const refProtDisp = item.refProtein !== null ? Number(item.refProtein).toFixed(1).replace(/\.0$/, '') : 0;
+          metaText = `⚖️ By weight (${refCalDisp} kcal • ${refProtDisp}g P / ${item.refWeight}g)`;
+        } else {
+          metaText = `⚖️ By weight`;
+        }
+      } else {
+        metaText = `${Math.round(item.calories * item.defaultQty)} kcal • ${(item.protein * item.defaultQty).toFixed(1)}g P`;
+      }
+
       const wrapper = document.createElement("div");
       wrapper.className = "item-btn-wrapper";
       wrapper.innerHTML = `
         <button class="item-btn" onclick="addSingleToChart(${JSON.stringify(item).replace(/"/g, '&quot;')})">
           <div class="name">${item.name}${displayQty}</div>
-          <div class="meta">${Math.round(item.calories * item.defaultQty)} kcal • ${(item.protein * item.defaultQty).toFixed(1)}g P</div>
+          <div class="meta">${metaText}</div>
         </button>
         <button class="delete-preset-btn" title="Delete item from Google Sheet" onclick="deletePreset('single', '${item.name.replace(/'/g, "\\'")}')">🗑️</button>
       `;
@@ -1919,9 +2008,10 @@
 
   function addSingleToChart(item) {
     const addQty = item.defaultQty || 1;
+    const isByWeight = !!item.isByWeight;
     const hasCustomW = item.customWeight !== undefined && item.customWeight !== null && item.customWeight !== "";
-    const existing = !hasCustomW
-      ? activeChart.find(c => c.kind === "single" && c.name === item.name && Math.abs(c.calories - item.calories) < 0.01 && !c.customWeight)
+    const existing = (!hasCustomW && !isByWeight)
+      ? activeChart.find(c => c.kind === "single" && c.name === item.name && Math.abs(c.calories - item.calories) < 0.01 && !c.customWeight && !c.isByWeight)
       : null;
 
     if (existing) {
@@ -1938,6 +2028,7 @@
         refWeight: item.refWeight ?? null,
         refCalories: item.refCalories ?? null,
         refProtein: item.refProtein ?? null,
+        isByWeight: isByWeight,
         refExpanded: false,
         customWeight: hasCustomW ? item.customWeight : "",
         qty: addQty,
@@ -1948,7 +2039,11 @@
   }
 
   function addMealToChart(groupName) {
-    const existing = activeChart.find(c => c.kind === "meal" && c.name === groupName && !c.customized);
+    const hasWeightSubs = presetMeals[groupName].some(sub => sub.isByWeight);
+    const existing = !hasWeightSubs
+      ? activeChart.find(c => c.kind === "meal" && c.name === groupName && !c.customized)
+      : null;
+
     if (existing) { existing.qty += 1; } else {
       const clonedSubitems = presetMeals[groupName].map(sub => ({
         id: crypto.randomUUID(),
@@ -1960,6 +2055,7 @@
         refWeight: sub.refWeight ?? null,
         refCalories: sub.refCalories ?? null,
         refProtein: sub.refProtein ?? null,
+        isByWeight: !!sub.isByWeight,
         refExpanded: false,
         customWeight: "",
         qty: sub.defaultQty || 1,
@@ -1975,10 +2071,14 @@
     const rawName = document.getElementById("custName").value.trim();
     const rawCal = document.getElementById("custCal").value.trim();
     const rawProt = document.getElementById("custProt").value.trim();
+
+    if (!rawName) return;
+
+    const isByWeight = rawCal === "" && rawProt === "";
     const totalCal = rawCal === "" ? 0 : (parseFloat(rawCal) || 0);
     const totalProt = rawProt === "" ? 0 : (parseFloat(rawProt) || 0);
-    if (!rawName) return;
     const parsed = parseQuantityFromName(rawName, totalCal, totalProt);
+
     addSingleToChart({
       name: parsed.name,
       defaultQty: parsed.qty,
@@ -1986,8 +2086,10 @@
       protein: parsed.unitProt,
       refWeight: null,
       refCalories: null,
-      refProtein: null
+      refProtein: null,
+      isByWeight: isByWeight
     });
+
     e.target.reset();
   }
 
@@ -2059,24 +2161,46 @@
 
     if (!isNaN(w) && w >= 0 && target.customWeight !== "" && !isNaN(rw) && rw > 0) {
       const ratio = w / rw;
-      if (!isNaN(rc)) target.calories = Math.round(rc * ratio * 100) / 100;
-      if (!isNaN(rp)) target.protein = Math.round(rp * ratio * 100) / 100;
+      target.calories = !isNaN(rc) ? Math.round(rc * ratio * 100) / 100 : 0;
+      target.protein = !isNaN(rp) ? Math.round(rp * ratio * 100) / 100 : 0;
     } else if (target.customWeight === "" || target.customWeight === null) {
-      if (typeof target.baseCalories === "number") target.calories = target.baseCalories;
-      if (typeof target.baseProtein === "number") target.protein = target.baseProtein;
+      if (target.isByWeight) {
+        target.calories = 0;
+        target.protein = 0;
+      } else {
+        if (typeof target.baseCalories === "number") target.calories = target.baseCalories;
+        if (typeof target.baseProtein === "number") target.protein = target.baseProtein;
+      }
     }
+  }
+
+  function formatItemMeta(item) {
+    const hasW = item.customWeight !== "" && item.customWeight !== null && item.customWeight !== undefined;
+    if (item.isByWeight && !hasW) {
+      if (item.refWeight !== null && (item.refCalories !== null || item.refProtein !== null)) {
+        const refCalDisp = item.refCalories !== null ? Math.round(item.refCalories) : 0;
+        const refProtDisp = item.refProtein !== null ? Number(item.refProtein).toFixed(1).replace(/\.0$/, '') : 0;
+        return `Enter weight (${refCalDisp} kcal • ${refProtDisp}g P per ${item.refWeight}g)`;
+      }
+      return `Enter weight (set Ref serving in Edit)`;
+    }
+    const wLabel = hasW ? ` (${item.customWeight}g)` : "";
+    return `${Math.round(item.calories * item.qty)} kcal • ${(item.protein * item.qty).toFixed(1)}g P${wLabel}`;
   }
 
   function syncItemDOM(id, target, parentMealId = null) {
     const metaEl = document.getElementById(`meta-${id}`);
     if (metaEl) {
-      const wLabel = target.customWeight !== "" && target.customWeight !== null && target.customWeight !== undefined ? ` (${target.customWeight}g)` : "";
-      metaEl.textContent = `${Math.round(target.calories * target.qty)} kcal • ${(target.protein * target.qty).toFixed(1)}g P${wLabel}`;
+      metaEl.textContent = formatItemMeta(target);
     }
     const calInp = document.getElementById(`edit-cal-${id}`);
     if (calInp) calInp.value = Math.round(target.calories * 100) / 100;
     const protInp = document.getElementById(`edit-prot-${id}`);
     if (protInp) protInp.value = Math.round(target.protein * 100) / 100;
+    const editWInp = document.getElementById(`edit-weight-${id}`);
+    if (editWInp && document.activeElement !== editWInp) editWInp.value = target.customWeight ?? "";
+    const emphWInp = document.getElementById(`emph-weight-${id}`);
+    if (emphWInp && document.activeElement !== emphWInp) emphWInp.value = target.customWeight ?? "";
 
     if (parentMealId) {
       const meal = activeChart.find(c => c.id === parentMealId);
@@ -2138,8 +2262,7 @@
         }
         const metaEl = document.getElementById(`meta-${id}`);
         if (metaEl) {
-          const wLabel = item.customWeight !== "" && item.customWeight !== null && item.customWeight !== undefined ? ` (${item.customWeight}g)` : "";
-          metaEl.textContent = `${Math.round(item.calories * item.qty)} kcal • ${(item.protein * item.qty).toFixed(1)}g P${wLabel}`;
+          metaEl.textContent = formatItemMeta(item);
         }
       }
     } else {
@@ -2168,7 +2291,9 @@
     const meal = activeChart.find(c => c.id === mealId);
     if (meal && preset) {
       meal.customized = true;
-      const existingSub = meal.items.find(s => s.name === preset.name && !s.customWeight);
+      const existingSub = !preset.isByWeight
+        ? meal.items.find(s => s.name === preset.name && !s.customWeight && !s.isByWeight)
+        : null;
       if (existingSub) { existingSub.qty += (preset.defaultQty || 1); } else {
         meal.items.push({
           id: crypto.randomUUID(),
@@ -2180,6 +2305,7 @@
           refWeight: preset.refWeight ?? null,
           refCalories: preset.refCalories ?? null,
           refProtein: preset.refProtein ?? null,
+          isByWeight: !!preset.isByWeight,
           refExpanded: false,
           customWeight: "",
           qty: preset.defaultQty || 1,
@@ -2199,6 +2325,16 @@
   }
 
   function clearChart() { activeChart = []; closeSaveDrawer(); renderChart(); }
+
+  function showAddedToTotalToast() {
+    const toast = document.getElementById("addedTotalToast");
+    if (!toast) return;
+    toast.classList.add("show");
+    if (addedToastTimer) clearTimeout(addedToastTimer);
+    addedToastTimer = setTimeout(() => {
+      toast.classList.remove("show");
+    }, 1000);
+  }
 
   function addChartToTotal() {
     let totalCal = 0, totalProt = 0;
@@ -2255,6 +2391,7 @@
 
     renderDailyChart();
     persistDailyLog();
+    showAddedToTotalToast();
   }
 
   function toggleDailyBreakdown(id) {
@@ -2457,7 +2594,8 @@
           protein: entry.protein * entry.qty,
           refWeight: entry.refWeight ?? "",
           refCalories: entry.refCalories ?? "",
-          refProtein: entry.refProtein ?? ""
+          refProtein: entry.refProtein ?? "",
+          isByWeight: !!entry.isByWeight
         });
       } else if (entry.kind === "meal") {
         entry.items.forEach(sub => {
@@ -2469,7 +2607,8 @@
             protein: sub.protein * totalSubQty,
             refWeight: sub.refWeight ?? "",
             refCalories: sub.refCalories ?? "",
-            refProtein: sub.refProtein ?? ""
+            refProtein: sub.refProtein ?? "",
+            isByWeight: !!sub.isByWeight
           });
         });
       }
@@ -2509,12 +2648,13 @@
     let rowsToAppend = [];
 
     if (flat.length === 1) {
+      const saveAsByWeight = flat[0].isByWeight && flat[0].calories === 0 && flat[0].protein === 0;
       rowsToAppend.push({
         type: "single",
         group: "",
         name: presetName,
-        calories: Math.round(flat[0].calories * 10) / 10,
-        protein: Math.round(flat[0].protein * 10) / 10,
+        calories: saveAsByWeight ? "" : Math.round(flat[0].calories * 10) / 10,
+        protein: saveAsByWeight ? "" : Math.round(flat[0].protein * 10) / 10,
         refWeight: flat[0].refWeight,
         refCalories: flat[0].refCalories,
         refProtein: flat[0].refProtein
@@ -2522,12 +2662,13 @@
     } else {
       flat.forEach(item => {
         const formattedName = item.qty > 1 ? `${item.name} (x${item.qty})` : item.name;
+        const saveAsByWeight = item.isByWeight && item.calories === 0 && item.protein === 0;
         rowsToAppend.push({
           type: "meal",
           group: presetName,
           name: formattedName,
-          calories: Math.round(item.calories * 10) / 10,
-          protein: Math.round(item.protein * 10) / 10,
+          calories: saveAsByWeight ? "" : Math.round(item.calories * 10) / 10,
+          protein: saveAsByWeight ? "" : Math.round(item.protein * 10) / 10,
           refWeight: item.refWeight,
           refCalories: item.refCalories,
           refProtein: item.refProtein
@@ -2536,7 +2677,10 @@
     }
 
     rowsToAppend.forEach(r => {
-      const parsed = parseQuantityFromName(r.name, r.calories, r.protein);
+      const isWeightRow = r.calories === "" && r.protein === "";
+      const numCal = isWeightRow ? 0 : (parseFloat(r.calories) || 0);
+      const numProt = isWeightRow ? 0 : (parseFloat(r.protein) || 0);
+      const parsed = parseQuantityFromName(r.name, numCal, numProt);
       const rw = r.refWeight !== "" && r.refWeight !== null ? parseFloat(r.refWeight) : null;
       const rc = r.refCalories !== "" && r.refCalories !== null ? parseFloat(r.refCalories) : null;
       const rp = r.refProtein !== "" && r.refProtein !== null ? parseFloat(r.refProtein) : null;
@@ -2548,7 +2692,8 @@
           protein: parsed.unitProt,
           refWeight: rw,
           refCalories: rc,
-          refProtein: rp
+          refProtein: rp,
+          isByWeight: isWeightRow
         });
       } else {
         if (!presetMeals[r.group]) presetMeals[r.group] = [];
@@ -2559,7 +2704,8 @@
           protein: parsed.unitProt,
           refWeight: rw,
           refCalories: rc,
-          refProtein: rp
+          refProtein: rp,
+          isByWeight: isWeightRow
         });
       }
     });
@@ -2614,17 +2760,26 @@
       card.className = "chart-card" + (entry.kind === "meal" ? " is-meal" : "");
 
       if (entry.kind === "single") {
-        const wLabel = entry.customWeight !== "" && entry.customWeight !== null && entry.customWeight !== undefined ? ` (${entry.customWeight}g)` : "";
         const wVal = entry.customWeight ?? "";
         const rwVal = entry.refWeight ?? "";
         const rcVal = entry.refCalories ?? "";
         const rpVal = entry.refProtein ?? "";
         const isRefOpen = !!entry.refExpanded;
+        const weightBoxHTML = entry.isByWeight ? `
+          <div class="weight-emphasis-bar">
+            <span class="weight-emphasis-label">⚖️ Weight</span>
+            <div class="weight-emphasis-input-wrap">
+              <input id="emph-weight-${entry.id}" type="number" class="weight-emphasis-input" step="any" min="0" placeholder="0" value="${wVal}" oninput="updateWeight('${entry.id}', this.value)" />
+              <span style="font-size:0.82rem; font-weight:700; color:var(--meal-text);">g</span>
+            </div>
+          </div>
+        ` : "";
+
         card.innerHTML = `
           <div class="row-main">
             <div>
               <div class="row-title" id="title-${entry.id}">${entry.name}</div>
-              <div id="meta-${entry.id}" style="font-size:0.8rem; color:var(--muted);">${Math.round(entry.calories * entry.qty)} kcal • ${(entry.protein * entry.qty).toFixed(1)}g P${wLabel}</div>
+              <div id="meta-${entry.id}" style="font-size:0.8rem; color:var(--muted);">${formatItemMeta(entry)}</div>
             </div>
             <div class="row-controls">
               <div class="qty-badge">
@@ -2636,10 +2791,11 @@
               <button class="icon-btn del" onclick="removeEntry('${entry.id}')">✕</button>
             </div>
           </div>
+          ${weightBoxHTML}
           ${entry.editing ? `
             <div class="edit-inputs">
               <label>Name: <input type="text" class="edit-name-input" value="${entry.name.replace(/"/g, '&quot;')}" oninput="updateItemName('${entry.id}', this.value)"></label>
-              <label>Weight (g): <input type="number" step="any" placeholder="—" value="${wVal}" oninput="updateWeight('${entry.id}', this.value)"></label>
+              <label>Weight (g): <input id="edit-weight-${entry.id}" type="number" step="any" placeholder="—" value="${wVal}" oninput="updateWeight('${entry.id}', this.value)"></label>
               <label>Cal: <input id="edit-cal-${entry.id}" type="number" step="any" value="${Math.round(entry.calories * 100) / 100}" oninput="updateMacros('${entry.id}', 'calories', this.value)"></label>
               <label>Prot: <input id="edit-prot-${entry.id}" type="number" step="0.1" value="${Math.round(entry.protein * 100) / 100}" oninput="updateMacros('${entry.id}', 'protein', this.value)"></label>
               <div class="edit-ref-wrap">
@@ -2661,18 +2817,27 @@
         const mealProt = entry.items.reduce((s, sub) => s + sub.protein * sub.qty, 0) * entry.qty;
 
         const subHTML = entry.items.map(sub => {
-          const subWLabel = sub.customWeight !== "" && sub.customWeight !== null && sub.customWeight !== undefined ? ` (${sub.customWeight}g)` : "";
           const subWVal = sub.customWeight ?? "";
           const subRwVal = sub.refWeight ?? "";
           const subRcVal = sub.refCalories ?? "";
           const subRpVal = sub.refProtein ?? "";
           const isSubRefOpen = !!sub.refExpanded;
+          const subWeightBoxHTML = sub.isByWeight ? `
+            <div class="weight-emphasis-bar">
+              <span class="weight-emphasis-label">⚖️ Weight</span>
+              <div class="weight-emphasis-input-wrap">
+                <input id="emph-weight-${sub.id}" type="number" class="weight-emphasis-input" step="any" min="0" placeholder="0" value="${subWVal}" oninput="updateWeight('${sub.id}', this.value, '${entry.id}')" />
+                <span style="font-size:0.82rem; font-weight:700; color:var(--meal-text);">g</span>
+              </div>
+            </div>
+          ` : "";
+
           return `
             <div class="subitem-row">
               <div class="row-main">
                 <div>
                   <div id="title-${sub.id}" style="font-weight:600; font-size:0.88rem;">${sub.name}</div>
-                  <div id="meta-${sub.id}" style="font-size:0.76rem; color:var(--muted);">${Math.round(sub.calories * sub.qty)} kcal • ${(sub.protein * sub.qty).toFixed(1)}g P${subWLabel}</div>
+                  <div id="meta-${sub.id}" style="font-size:0.76rem; color:var(--muted);">${formatItemMeta(sub)}</div>
                 </div>
                 <div class="row-controls">
                   <div class="qty-badge">
@@ -2684,10 +2849,11 @@
                   <button class="icon-btn del" onclick="removeEntry('${sub.id}', '${entry.id}')">✕</button>
                 </div>
               </div>
+              ${subWeightBoxHTML}
               ${sub.editing ? `
                 <div class="edit-inputs">
                   <label>Name: <input type="text" class="edit-name-input" value="${sub.name.replace(/"/g, '&quot;')}" oninput="updateItemName('${sub.id}', this.value, '${entry.id}')"></label>
-                  <label>Weight (g): <input type="number" step="any" placeholder="—" value="${subWVal}" oninput="updateWeight('${sub.id}', this.value, '${entry.id}')"></label>
+                  <label>Weight (g): <input id="edit-weight-${sub.id}" type="number" step="any" placeholder="—" value="${subWVal}" oninput="updateWeight('${sub.id}', this.value, '${entry.id}')"></label>
                   <label>Cal: <input id="edit-cal-${sub.id}" type="number" step="any" value="${Math.round(sub.calories * 100) / 100}" oninput="updateMacros('${sub.id}', 'calories', this.value, '${entry.id}')"></label>
                   <label>Prot: <input id="edit-prot-${sub.id}" type="number" step="0.1" value="${Math.round(sub.protein * 100) / 100}" oninput="updateMacros('${sub.id}', 'protein', this.value, '${entry.id}')"></label>
                   <div class="edit-ref-wrap">
@@ -2707,7 +2873,12 @@
           `;
         }).join("");
 
-        const optionsHTML = presetSingles.map((p, i) => `<option value="${i}">${p.name} (${Math.round(p.calories * p.defaultQty)} kcal)</option>`).join("");
+        const optionsHTML = presetSingles.map((p, i) => {
+          const optLabel = p.isByWeight
+            ? `${p.name} (by weight)`
+            : `${p.name} (${Math.round(p.calories * p.defaultQty)} kcal)`;
+          return `<option value="${i}">${optLabel}</option>`;
+        }).join("");
 
         card.innerHTML = `
           <div class="row-main">
