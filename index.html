@@ -8,26 +8,134 @@
     :root {
       --bg: #f8fafc;
       --card: #ffffff;
+      --surface: #f1f5f9;
+      --surface-alt: #f8fafc;
       --border: #e2e8f0;
+      --input-border: #cbd5e1;
       --text: #0f172a;
+      --text-secondary: #334155;
       --muted: #64748b;
       --primary: #2563eb;
       --primary-hover: #1d4ed8;
       --meal: #0d9488;
       --meal-bg: #f0fdfa;
       --meal-border: #99f6e4;
+      --meal-text: #115e59;
       --danger: #ef4444;
+      --danger-bg: #fef2f2;
+      --danger-border: #fecaca;
+      --totals-bg: #0f172a;
+      --totals-text: #ffffff;
+      --totals-muted: #94a3b8;
+      --nav-bg: #ffffff;
       --radius: 12px;
 
       /* Profile Colors */
       --user-usamuel: #2563eb;
+      --user-usamuel-bg: #ffffff;
       --user-kehara: #7c3aed;
       --user-kehara-bg: #f3e8ff;
       --user-kehara-border: #d8b4fe;
     }
 
+    /* THEME 2: MIDNIGHT DARK */
+    [data-theme="dark"] {
+      --bg: #0b1120;
+      --card: #131c31;
+      --surface: #1e293b;
+      --surface-alt: #0f172a;
+      --border: #273549;
+      --input-border: #334155;
+      --text: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --meal: #14b8a6;
+      --meal-bg: #0f292a;
+      --meal-border: #115e59;
+      --meal-text: #5eead4;
+      --danger: #f87171;
+      --danger-bg: #2a1215;
+      --danger-border: #7f1d1d;
+      --totals-bg: #020617;
+      --totals-text: #f8fafc;
+      --totals-muted: #94a3b8;
+      --nav-bg: #0f172a;
+
+      --user-usamuel: #60a5fa;
+      --user-usamuel-bg: #172554;
+      --user-kehara: #c084fc;
+      --user-kehara-bg: #2e1065;
+      --user-kehara-border: #6b21a8;
+    }
+
+    /* THEME 3: DARK PURPLE HAZE */
+    [data-theme="purple-haze"] {
+      --bg: #120b24;
+      --card: #1c1236;
+      --surface: #281a4d;
+      --surface-alt: #160d2b;
+      --border: #3b276e;
+      --input-border: #4c338a;
+      --text: #f5f3ff;
+      --text-secondary: #ddd6fe;
+      --muted: #a78bfa;
+      --primary: #a855f7;
+      --primary-hover: #9333ea;
+      --meal: #ec4899;
+      --meal-bg: #2d1233;
+      --meal-border: #831843;
+      --meal-text: #f9a8d4;
+      --danger: #fb7185;
+      --danger-bg: #311022;
+      --danger-border: #881337;
+      --totals-bg: #0b0617;
+      --totals-text: #faf5ff;
+      --totals-muted: #c4b5fd;
+      --nav-bg: #150c2b;
+
+      --user-usamuel: #38bdf8;
+      --user-usamuel-bg: #132544;
+      --user-kehara: #e879f9;
+      --user-kehara-bg: #3b124c;
+      --user-kehara-border: #86198f;
+    }
+
+    /* THEME 4: EMERALD NIGHT */
+    [data-theme="emerald-night"] {
+      --bg: #071713;
+      --card: #0e241e;
+      --surface: #16352c;
+      --surface-alt: #0a1c17;
+      --border: #1f473b;
+      --input-border: #2a5c4d;
+      --text: #ecfdf5;
+      --text-secondary: #a7f3d0;
+      --muted: #6ee7b7;
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --meal: #06b6d4;
+      --meal-bg: #0c2b33;
+      --meal-border: #155e75;
+      --meal-text: #67e8f9;
+      --danger: #f87171;
+      --danger-bg: #2b1315;
+      --danger-border: #7f1d1d;
+      --totals-bg: #030d0a;
+      --totals-text: #ecfdf5;
+      --totals-muted: #6ee7b7;
+      --nav-bg: #091c17;
+
+      --user-usamuel: #34d399;
+      --user-usamuel-bg: #063729;
+      --user-kehara: #c084fc;
+      --user-kehara-bg: #2b1347;
+      --user-kehara-border: #6b21a8;
+    }
+
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    body { margin: 0; padding: 12px; padding-bottom: 76px; background: var(--bg); color: var(--text); }
+    body { margin: 0; padding: 12px; padding-bottom: 76px; background: var(--bg); color: var(--text); transition: background 0.2s, color 0.2s; }
 
     /* App Tab Views */
     .app-view { display: none; }
@@ -36,9 +144,11 @@
     /* Center Tab 1 vertically on tall screens */
     #tab1.active {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       min-height: calc(100vh - 88px);
+      gap: 14px;
     }
 
     /* Bottom Navigation Bar (Android Native Feel) */
@@ -48,12 +158,12 @@
       left: 0;
       width: 100%;
       height: 64px;
-      background: #ffffff;
+      background: var(--nav-bg);
       border-top: 1px solid var(--border);
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       z-index: 1000;
-      box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.12);
     }
     .nav-item {
       display: flex;
@@ -89,29 +199,29 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 14px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       margin-bottom: 16px;
     }
 
-    h2 { margin: 0 0 10px; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+    h2 { margin: 0 0 10px; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--text); }
 
     /* Plain Calculator Styles */
     .calc-card {
       width: 100%;
       max-width: 420px;
       margin: 0 auto;
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      color: #1e293b;
+      padding: 22px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+      color: var(--text);
     }
     .calc-title {
       margin: 0 0 16px 0;
       font-size: 1.25rem;
       font-weight: 700;
-      color: #0f172a;
+      color: var(--text);
       text-align: center;
       display: block;
     }
@@ -120,9 +230,9 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #64748b;
+      color: var(--muted);
       margin-bottom: 10px;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid var(--border);
       padding-bottom: 4px;
     }
     .input-grid {
@@ -139,19 +249,22 @@
       font-size: 0.85rem;
       font-weight: 600;
       margin-bottom: 5px;
-      color: #334155;
+      color: var(--text-secondary);
     }
     .input-group input {
       width: 100%;
       padding: 10px;
       font-size: 1rem;
-      border: 1.5px solid #cbd5e1;
+      border: 1.5px solid var(--input-border);
       border-radius: 8px;
       outline: none;
-      transition: border-color 0.2s;
+      background: var(--surface-alt);
+      color: var(--text);
+      transition: border-color 0.2s, background 0.2s;
     }
     .input-group input:focus {
-      border-color: #2563eb;
+      border-color: var(--primary);
+      background: var(--card);
     }
     .target-box {
       margin-bottom: 20px;
@@ -161,23 +274,25 @@
       padding: 12px;
       font-size: 1.05rem;
       font-weight: 600;
-      border: 1.5px solid #94a3b8;
+      border: 1.5px solid var(--input-border);
       border-radius: 8px;
       outline: none;
-      background-color: #f8fafc;
+      background-color: var(--surface-alt);
+      color: var(--text);
     }
     .target-box input:focus {
-      border-color: #2563eb;
-      background-color: #ffffff;
+      border-color: var(--primary);
+      background-color: var(--card);
     }
     .results-panel {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      background: #f1f5f9;
+      background: var(--surface);
       padding: 16px;
       border-radius: 10px;
       text-align: center;
+      border: 1px solid var(--border);
     }
     .result-item {
       display: flex;
@@ -186,13 +301,13 @@
     .result-value {
       font-size: 1.6rem;
       font-weight: 800;
-      color: #2563eb;
+      color: var(--primary);
       line-height: 1.2;
     }
     .result-label {
       font-size: 0.8rem;
       font-weight: 600;
-      color: #475569;
+      color: var(--muted);
       margin-top: 4px;
     }
     .calc-actions {
@@ -220,26 +335,67 @@
       width: 100%;
       padding: 9px;
       background: transparent;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--input-border);
       border-radius: 8px;
-      color: #64748b;
+      color: var(--muted);
       font-size: 0.85rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
     }
     .reset-btn:hover {
-      background: #f8fafc;
-      color: #0f172a;
-      border-color: #94a3b8;
+      background: var(--surface);
+      color: var(--text);
     }
     .calc-feedback {
       text-align: center;
       font-size: 0.8rem;
       font-weight: 600;
-      color: #0f766e;
+      color: var(--meal);
       min-height: 18px;
       margin-top: 4px;
+    }
+
+    /* Theme Selector Inside Calculator Tab */
+    .theme-section {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+    .theme-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: var(--surface-alt);
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .theme-btn:hover {
+      border-color: var(--primary);
+    }
+    .theme-btn.active {
+      border-color: var(--primary);
+      background: var(--surface);
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .theme-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.25);
     }
 
     /* Preset & Chart Specific Styles */
@@ -250,9 +406,10 @@
       border: 1.5px solid var(--border);
       border-radius: 10px;
       font-size: 0.95rem;
-      background: #f8fafc;
+      background: var(--surface-alt);
+      color: var(--text);
     }
-    .search-input:focus { outline: none; border-color: var(--primary); background: #fff; }
+    .search-input:focus { outline: none; border-color: var(--primary); background: var(--card); }
     .clear-search {
       position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
       border: none; background: transparent; color: var(--muted); font-size: 1rem; cursor: pointer; display: none;
@@ -263,7 +420,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #f1f5f9;
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 9px;
       padding: 10px 12px;
@@ -276,7 +433,7 @@
       color: var(--text);
     }
     .accordion-header .badge {
-      background: #fff;
+      background: var(--card);
       border: 1px solid var(--border);
       padding: 2px 8px;
       border-radius: 99px;
@@ -305,7 +462,7 @@
       color: var(--muted);
     }
     .pagination-bar button {
-      background: #fff;
+      background: var(--card);
       border: 1px solid var(--border);
       border-radius: 6px;
       padding: 4px 10px;
@@ -322,7 +479,7 @@
     }
 
     .item-btn {
-      background: #fff;
+      background: var(--card);
       border: 1.5px solid var(--border);
       border-radius: 10px;
       padding: 10px;
@@ -335,6 +492,7 @@
       justify-content: space-between;
       min-height: 62px;
       width: 100%;
+      color: var(--text);
     }
     .item-btn:hover { border-color: var(--primary); }
     .item-btn:active { transform: scale(0.97); }
@@ -343,7 +501,7 @@
 
     .meal-btn { border-color: var(--meal-border); background: var(--meal-bg); }
     .meal-btn:hover { border-color: var(--meal); }
-    .meal-btn .name { color: #115e59; }
+    .meal-btn .name { color: var(--meal-text); }
 
     .delete-preset-btn {
       position: absolute;
@@ -353,17 +511,17 @@
       border: none;
       font-size: 0.75rem;
       cursor: pointer;
-      opacity: 0.6;
+      opacity: 0.65;
       padding: 4px;
       border-radius: 4px;
     }
-    .delete-preset-btn:hover { opacity: 1; background: #fee2e2; }
+    .delete-preset-btn:hover { opacity: 1; background: var(--danger-bg); }
 
     .custom-box {
       margin-top: 10px;
       border: 1px solid var(--border);
       border-radius: 9px;
-      background: #f8fafc;
+      background: var(--surface-alt);
       overflow: hidden;
     }
     .custom-form-body {
@@ -386,6 +544,8 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       font-size: 0.9rem;
+      background: var(--card);
+      color: var(--text);
     }
     .btn-primary {
       background: var(--primary);
@@ -409,7 +569,7 @@
       cursor: pointer;
       white-space: nowrap;
     }
-    .btn-small-add:hover { background: #0f766e; }
+    .btn-small-add:hover { opacity: 0.92; }
 
     /* Hidden Sync Button via CSS ID */
     #syncBtn { display: none; }
@@ -424,7 +584,7 @@
     .mini-profile-bar {
       display: inline-flex;
       gap: 2px;
-      background: #f1f5f9;
+      background: var(--surface);
       padding: 2px;
       border-radius: 6px;
       border: 1px solid var(--border);
@@ -441,22 +601,22 @@
       transition: all 0.15s;
     }
     .mini-profile-tab.active-usamuel {
-      background: #fff;
+      background: var(--user-usamuel-bg);
       color: var(--user-usamuel);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.12);
     }
     .mini-profile-tab.active-kehara {
       background: var(--user-kehara-bg);
       color: var(--user-kehara);
       border: 1px solid var(--user-kehara-border);
-      box-shadow: 0 1px 2px rgba(124, 58, 237, 0.14);
+      box-shadow: 0 1px 2px rgba(124, 58, 237, 0.16);
     }
 
     .profile-bar {
       display: flex;
       gap: 6px;
       margin-bottom: 10px;
-      background: #f8fafc;
+      background: var(--surface-alt);
       padding: 5px;
       border-radius: 8px;
       border: 1px solid var(--border);
@@ -474,15 +634,15 @@
       transition: all 0.2s;
     }
     .profile-tab.active-usamuel {
-      background: #fff;
+      background: var(--user-usamuel-bg);
       color: var(--user-usamuel);
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
     }
     .profile-tab.active-kehara {
       background: var(--user-kehara-bg);
       color: var(--user-kehara);
       border: 1px solid var(--user-kehara-border);
-      box-shadow: 0 1px 4px rgba(124, 58, 237, 0.14);
+      box-shadow: 0 1px 4px rgba(124, 58, 237, 0.16);
     }
 
     .totals-bar {
@@ -492,14 +652,15 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      background: #0f172a;
-      color: #fff;
+      background: var(--totals-bg);
+      color: var(--totals-text);
       padding: 12px 14px;
       border-radius: 10px;
       margin-bottom: 12px;
-      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     }
-    .total-box span { display: block; font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; }
+    .total-box span { display: block; font-size: 0.72rem; color: var(--totals-muted); text-transform: uppercase; }
     .total-box strong { font-size: 1.35rem; }
 
     .chart-list { display: flex; flex-direction: column; gap: 10px; }
@@ -507,9 +668,9 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 10px 12px;
-      background: #fff;
+      background: var(--card);
     }
-    .chart-card.is-meal { border-left: 4px solid var(--meal); background: #fcfdfd; }
+    .chart-card.is-meal { border-left: 4px solid var(--meal); background: var(--surface-alt); }
 
     .row-main {
       display: flex;
@@ -518,13 +679,13 @@
       gap: 8px;
       flex-wrap: wrap;
     }
-    .row-title { font-weight: 600; font-size: 0.94rem; }
+    .row-title { font-weight: 600; font-size: 0.94rem; color: var(--text); }
     .row-controls { display: flex; align-items: center; gap: 6px; }
 
     .qty-badge {
       display: inline-flex;
       align-items: center;
-      background: #f1f5f9;
+      background: var(--surface);
       border-radius: 7px;
       overflow: hidden;
     }
@@ -535,9 +696,10 @@
       font-weight: bold;
       font-size: 0.95rem;
       cursor: pointer;
+      color: var(--text);
     }
-    .qty-badge button:hover { background: #e2e8f0; }
-    .qty-badge span { padding: 0 6px; font-size: 0.88rem; font-weight: 700; }
+    .qty-badge button:hover { opacity: 0.8; }
+    .qty-badge span { padding: 0 6px; font-size: 0.88rem; font-weight: 700; color: var(--text); }
 
     .edit-inputs {
       display: flex;
@@ -548,6 +710,7 @@
       padding-top: 8px;
       border-top: 1px dashed var(--border);
       font-size: 0.82rem;
+      color: var(--text-secondary);
     }
     .edit-inputs input { width: 74px; padding: 5px 6px; font-size: 0.84rem; }
     .edit-inputs input.edit-name-input { width: 150px; }
@@ -555,14 +718,14 @@
     .meal-subitems {
       margin-top: 10px;
       padding-left: 10px;
-      border-left: 2px solid #ccfbf1;
+      border-left: 2px solid var(--meal-border);
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
     .subitem-row {
-      background: #fff;
-      border: 1px solid #e2e8f0;
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: 8px 10px;
     }
@@ -573,29 +736,31 @@
       border-radius: 8px;
       border: 1.5px solid var(--border);
       font-size: 0.9rem;
-      background: #fff;
+      background: var(--card);
+      color: var(--text);
       outline: none;
     }
     .add-sub-bar select:focus { border-color: var(--primary); }
 
     .icon-btn {
       border: 1px solid var(--border);
-      background: #fff;
+      background: var(--card);
+      color: var(--text);
       border-radius: 7px;
       padding: 6px 10px;
       font-size: 0.8rem;
       font-weight: 600;
       cursor: pointer;
     }
-    .icon-btn:hover { background: #f1f5f9; }
-    .icon-btn.save { color: #0f766e; border-color: #99f6e4; background: #f0fdfa; }
-    .icon-btn.save:hover { background: #ccfbf1; }
-    .icon-btn.del { color: var(--danger); border-color: #fecaca; }
-    .icon-btn.del:hover { background: #fef2f2; }
+    .icon-btn:hover { background: var(--surface); }
+    .icon-btn.save { color: var(--meal-text); border-color: var(--meal-border); background: var(--meal-bg); }
+    .icon-btn.save:hover { opacity: 0.9; }
+    .icon-btn.del { color: var(--danger); border-color: var(--danger-border); background: var(--card); }
+    .icon-btn.del:hover { background: var(--danger-bg); }
 
     .save-drawer {
-      background: #f0fdfa;
-      border: 1.5px solid #5eead4;
+      background: var(--meal-bg);
+      border: 1.5px solid var(--meal-border);
       border-radius: 10px;
       padding: 12px;
       margin-bottom: 12px;
@@ -609,6 +774,17 @@
 
     .empty-state { text-align: center; color: var(--muted); padding: 28px 12px; font-size: 0.9rem; }
   </style>
+  <script>
+    // Apply saved theme immediately before body paints
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('calorie_suite_theme');
+        if (savedTheme && savedTheme !== 'light') {
+          document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
 
@@ -655,6 +831,29 @@
         <button type="button" class="reset-btn" onclick="resetCalc()">Clear Fields</button>
       </div>
       <div id="calcFeedback" class="calc-feedback"></div>
+
+      <!-- APP THEME SELECTOR -->
+      <div class="theme-section">
+        <div class="section-label" style="margin-bottom: 8px;">3. App Theme</div>
+        <div class="theme-grid">
+          <button type="button" class="theme-btn" data-theme-choice="light" onclick="setTheme('light')">
+            <span class="theme-dot" style="background: #f8fafc; border-color: #94a3b8;"></span>
+            <span>Clean Light</span>
+          </button>
+          <button type="button" class="theme-btn" data-theme-choice="dark" onclick="setTheme('dark')">
+            <span class="theme-dot" style="background: #0b1120;"></span>
+            <span>Midnight Dark</span>
+          </button>
+          <button type="button" class="theme-btn" data-theme-choice="purple-haze" onclick="setTheme('purple-haze')">
+            <span class="theme-dot" style="background: linear-gradient(135deg, #a855f7, #ec4899);"></span>
+            <span>Purple Haze</span>
+          </button>
+          <button type="button" class="theme-btn" data-theme-choice="emerald-night" onclick="setTheme('emerald-night')">
+            <span class="theme-dot" style="background: linear-gradient(135deg, #10b981, #06b6d4);"></span>
+            <span>Emerald Night</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -733,13 +932,13 @@
         </div>
 
         <div id="saveDrawer" class="save-drawer">
-          <div id="saveHint" style="font-size:0.82rem; font-weight:600; color:#115e59;"></div>
+          <div id="saveHint" style="font-size:0.82rem; font-weight:600; color:var(--meal-text);"></div>
           <div class="save-drawer-row">
             <input type="text" id="savePresetName" placeholder="Enter preset name..." />
             <button type="button" class="btn-primary" id="confirmSaveBtn" onclick="saveChartToSheet()">Save</button>
             <button type="button" class="icon-btn" onclick="closeSaveDrawer()">Cancel</button>
           </div>
-          <div id="saveFeedback" style="font-size:0.78rem; margin-top:6px; color:#0f766e;"></div>
+          <div id="saveFeedback" style="font-size:0.78rem; margin-top:6px; color:var(--meal-text);"></div>
         </div>
 
         <div class="totals-bar">
@@ -804,10 +1003,36 @@
   </nav>
 
 <script>
-  // Request persistent storage from browser/WebView so local items are retained as long as possible
+  // Request persistent storage from browser/WebView so local items, profile & theme are retained as long as possible
   if (navigator.storage && navigator.storage.persist) {
     navigator.storage.persist().catch(() => {});
   }
+
+  const THEME_STORAGE_KEY = "calorie_suite_theme";
+  const USER_STORAGE_KEY = "calorie_suite_current_user";
+  const ACTIVE_CHART_STORAGE_KEY = "calorie_suite_active_chart";
+
+  function setTheme(themeName) {
+    if (!themeName || themeName === 'light') {
+      document.documentElement.removeAttribute('data-theme');
+      themeName = 'light';
+    } else {
+      document.documentElement.setAttribute('data-theme', themeName);
+    }
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, themeName);
+    } catch (e) {}
+    updateThemeButtons(themeName);
+  }
+
+  function updateThemeButtons(activeTheme) {
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-theme-choice') === activeTheme);
+    });
+  }
+
+  // Initialize theme button active state
+  updateThemeButtons(localStorage.getItem(THEME_STORAGE_KEY) || 'light');
 
   // Tab Switching Logic
   function switchTab(tabNum) {
@@ -888,7 +1113,6 @@
   // Presets & Daily Log Logic
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTDy23Yds4ganj2jTVPhkWC6ZAsOFb3jsMOg-5lZop7TNVD37um9iI-UNO6UBV2GF8Kxj57morj39K/pub?output=csv";
   const APPS_SCRIPT_SAVE_URL = "https://script.google.com/macros/s/AKfycbzBuIh20txpC9SNlJ6IiUgbIWijXTaFCdb2MjmssEgi-OFTt2_7Vaw2SHM7Vjfp9CazZQ/exec";
-  const ACTIVE_CHART_STORAGE_KEY = "calorie_suite_active_chart";
 
   let presetSingles = [];
   let presetMeals = {};
@@ -910,7 +1134,15 @@
   let mealPage = 1;
   let singlePage = 1;
 
+  // Restore last selected profile (defaults to Usamuel if never set)
   let currentUser = "Usamuel";
+  try {
+    const savedUser = localStorage.getItem(USER_STORAGE_KEY);
+    if (savedUser === "Usamuel" || savedUser === "Kehara") {
+      currentUser = savedUser;
+    }
+  } catch (e) {}
+
   let userDailyLogs = {
     Usamuel: JSON.parse(localStorage.getItem('usamuel_daily_log') || '[]'),
     Kehara: JSON.parse(localStorage.getItem('kehara_daily_log') || '[]')
@@ -1015,6 +1247,10 @@
 
   function switchUser(user) {
     currentUser = user;
+    try {
+      localStorage.setItem(USER_STORAGE_KEY, user);
+    } catch (e) {}
+
     const isUsamuel = user === "Usamuel";
 
     const tabU = document.getElementById("tabUsamuel");
@@ -1611,6 +1847,8 @@
     updateTotalsOnly();
   }
 
+  // Apply restored profile UI immediately on startup
+  switchUser(currentUser);
   loadAllData();
   renderChart();
 </script>
