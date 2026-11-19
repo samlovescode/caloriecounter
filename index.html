@@ -28,6 +28,11 @@
       --totals-text: #ffffff;
       --totals-muted: #94a3b8;
       --nav-bg: #ffffff;
+      --bar-track: #e2e8f0;
+      --cal-ok: #16a34a;
+      --cal-over: #ef4444;
+      --prot-ok: #0d9488;
+      --prot-over: #f59e0b;
       --radius: 12px;
 
       /* Profile Colors */
@@ -62,6 +67,11 @@
       --totals-text: #f8fafc;
       --totals-muted: #94a3b8;
       --nav-bg: #0f172a;
+      --bar-track: #1e293b;
+      --cal-ok: #22c55e;
+      --cal-over: #f87171;
+      --prot-ok: #2dd4bf;
+      --prot-over: #fbbf24;
 
       --user-usamuel: #60a5fa;
       --user-usamuel-bg: #172554;
@@ -94,6 +104,11 @@
       --totals-text: #faf5ff;
       --totals-muted: #c4b5fd;
       --nav-bg: #150c2b;
+      --bar-track: #281a4d;
+      --cal-ok: #22c55e;
+      --cal-over: #fb7185;
+      --prot-ok: #e879f9;
+      --prot-over: #fbbf24;
 
       --user-usamuel: #38bdf8;
       --user-usamuel-bg: #132544;
@@ -635,6 +650,43 @@
       box-shadow: 0 1px 4px rgba(124, 58, 237, 0.16);
     }
 
+    /* Target Inputs & Progress Section in Tab 3 */
+    .target-config-box {
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+    .target-config-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .target-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .target-field label {
+      display: block;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+    .target-field input {
+      padding: 7px 9px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
     .totals-bar {
       position: sticky;
       top: 0;
@@ -646,12 +698,91 @@
       color: var(--totals-text);
       padding: 12px 14px;
       border-radius: 10px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       border: 1px solid var(--border);
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     }
     .total-box span { display: block; font-size: 0.72rem; color: var(--totals-muted); text-transform: uppercase; }
     .total-box strong { font-size: 1.35rem; }
+
+    .remaining-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+    .rem-box span {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .rem-box strong {
+      display: block;
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin-top: 2px;
+      color: var(--text);
+    }
+    .rem-box strong.over-target {
+      color: var(--cal-over);
+    }
+
+    .progress-bars-box {
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .prog-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .prog-pct {
+      font-weight: 800;
+      color: var(--text);
+    }
+    .prog-pct.over {
+      color: var(--cal-over);
+    }
+    .prog-track {
+      width: 100%;
+      height: 11px;
+      background: var(--bar-track);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .prog-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      transition: width 0.25s ease, background-color 0.25s ease;
+    }
+    .prog-fill.cal-fill {
+      background: var(--cal-ok);
+    }
+    .prog-fill.cal-fill.over {
+      background: var(--cal-over);
+    }
+    .prog-fill.prot-fill {
+      background: var(--prot-ok);
+    }
+    .prog-fill.prot-fill.over {
+      background: var(--prot-over);
+    }
 
     .chart-list { display: flex; flex-direction: column; gap: 10px; }
     .chart-card {
@@ -956,7 +1087,24 @@
           <button class="icon-btn del" onclick="clearDailyLog()">Reset</button>
         </div>
 
-        <div class="totals-bar" style="margin-bottom: 8px;">
+        <div class="target-config-box">
+          <div class="target-config-title">
+            <span>🎯 Calorie and Protein Target</span>
+            <span id="targetProfileLabel" style="font-size:0.72rem; color:var(--primary);">Usamuel</span>
+          </div>
+          <div class="target-inputs-grid">
+            <div class="target-field">
+              <label for="calTargetInput">Calorie Target (kcal)</label>
+              <input type="number" id="calTargetInput" placeholder="e.g. 2100" min="0" step="any" oninput="updateUserTargets()">
+            </div>
+            <div class="target-field">
+              <label for="protTargetInput">Protein Target (g)</label>
+              <input type="number" id="protTargetInput" placeholder="e.g. 140" min="0" step="any" oninput="updateUserTargets()">
+            </div>
+          </div>
+        </div>
+
+        <div class="totals-bar" style="margin-bottom: 10px;">
           <div class="total-box">
             <span>Total Calories</span>
             <strong id="dailyTotalCal">0 kcal</strong>
@@ -964,6 +1112,38 @@
           <div class="total-box">
             <span>Total Protein</span>
             <strong id="dailyTotalProt">0.0 g</strong>
+          </div>
+        </div>
+
+        <div class="remaining-bar">
+          <div class="rem-box">
+            <span>Remaining Calories</span>
+            <strong id="remCalText">—</strong>
+          </div>
+          <div class="rem-box">
+            <span>Remaining Protein</span>
+            <strong id="remProtText">—</strong>
+          </div>
+        </div>
+
+        <div class="progress-bars-box">
+          <div>
+            <div class="prog-item-header">
+              <span>Calories to Target</span>
+              <span id="calPctText" class="prog-pct">0%</span>
+            </div>
+            <div class="prog-track">
+              <div id="calProgressFill" class="prog-fill cal-fill"></div>
+            </div>
+          </div>
+          <div>
+            <div class="prog-item-header">
+              <span>Protein to Target</span>
+              <span id="protPctText" class="prog-pct">0%</span>
+            </div>
+            <div class="prog-track">
+              <div id="protProgressFill" class="prog-fill prot-fill"></div>
+            </div>
           </div>
         </div>
 
@@ -989,7 +1169,7 @@
   </nav>
 
 <script>
-  // Request persistent storage from browser/WebView so local items, profile & theme are retained as long as possible
+  // Request persistent storage from browser/WebView so local items, profile, targets & theme are retained as long as possible
   if (navigator.storage && navigator.storage.persist) {
     navigator.storage.persist().catch(() => {});
   }
@@ -997,8 +1177,9 @@
   const THEME_STORAGE_KEY = "calorie_suite_theme";
   const USER_STORAGE_KEY = "calorie_suite_current_user";
   const ACTIVE_CHART_STORAGE_KEY = "calorie_suite_active_chart";
+  const TARGETS_STORAGE_KEY = "calorie_suite_targets";
 
-  // Forces a fresh load of the hosted app without clearing localStorage (theme, profile, chart, daily logs)
+  // Forces a fresh load of the hosted app without clearing localStorage (theme, profile, targets, chart, daily logs)
   async function forceAppUpdate() {
     const fb = document.getElementById('calcFeedback');
     if (fb) fb.textContent = 'Checking for latest update...';
@@ -1154,6 +1335,27 @@
     }
   } catch (e) {}
 
+  // Per-profile targets stored locally
+  let userTargets = {
+    Usamuel: { calories: "", protein: "" },
+    Kehara: { calories: "", protein: "" }
+  };
+  try {
+    const savedTargets = JSON.parse(localStorage.getItem(TARGETS_STORAGE_KEY) || '{}');
+    if (savedTargets.Usamuel) {
+      userTargets.Usamuel = {
+        calories: savedTargets.Usamuel.calories ?? "",
+        protein: savedTargets.Usamuel.protein ?? ""
+      };
+    }
+    if (savedTargets.Kehara) {
+      userTargets.Kehara = {
+        calories: savedTargets.Kehara.calories ?? "",
+        protein: savedTargets.Kehara.protein ?? ""
+      };
+    }
+  } catch (e) {}
+
   let userDailyLogs = {
     Usamuel: JSON.parse(localStorage.getItem('usamuel_daily_log') || '[]'),
     Kehara: JSON.parse(localStorage.getItem('kehara_daily_log') || '[]')
@@ -1163,6 +1365,30 @@
     try {
       localStorage.setItem(ACTIVE_CHART_STORAGE_KEY, JSON.stringify(activeChart));
     } catch (e) {}
+  }
+
+  function persistTargets() {
+    try {
+      localStorage.setItem(TARGETS_STORAGE_KEY, JSON.stringify(userTargets));
+    } catch (e) {}
+  }
+
+  function syncTargetInputsForUser() {
+    const t = userTargets[currentUser] || { calories: "", protein: "" };
+    document.getElementById("targetProfileLabel").textContent = currentUser;
+    document.getElementById("calTargetInput").value = t.calories;
+    document.getElementById("protTargetInput").value = t.protein;
+  }
+
+  function updateUserTargets() {
+    const calRaw = document.getElementById("calTargetInput").value;
+    const protRaw = document.getElementById("protTargetInput").value;
+    userTargets[currentUser] = {
+      calories: calRaw,
+      protein: protRaw
+    };
+    persistTargets();
+    updateDailyTotalsOnly();
   }
 
   function parseQuantityFromName(rawName, totalCal, totalProt) {
@@ -1274,6 +1500,7 @@
     miniU.className = "mini-profile-tab " + (isUsamuel ? "active-usamuel" : "");
     miniK.className = "mini-profile-tab " + (!isUsamuel ? "active-kehara" : "");
 
+    syncTargetInputsForUser();
     renderDailyChart();
   }
 
@@ -1628,8 +1855,76 @@
       totalCal += entry.calories * entry.qty;
       totalProt += entry.protein * entry.qty;
     });
-    document.getElementById("dailyTotalCal").textContent = Math.round(totalCal) + " kcal";
+
+    const roundedCal = Math.round(totalCal);
+    const roundedProt = Math.round(totalProt * 10) / 10;
+
+    document.getElementById("dailyTotalCal").textContent = roundedCal + " kcal";
     document.getElementById("dailyTotalProt").textContent = totalProt.toFixed(1) + " g";
+
+    const t = userTargets[currentUser] || { calories: "", protein: "" };
+    const calTarget = parseFloat(t.calories);
+    const protTarget = parseFloat(t.protein);
+
+    const remCalEl = document.getElementById("remCalText");
+    const calPctEl = document.getElementById("calPctText");
+    const calFillEl = document.getElementById("calProgressFill");
+
+    if (!isNaN(calTarget) && calTarget > 0) {
+      const remCal = Math.round(calTarget - totalCal);
+      const calPct = Math.round((totalCal / calTarget) * 100);
+      const isOverCal = totalCal > calTarget;
+
+      if (isOverCal) {
+        remCalEl.textContent = `${Math.abs(remCal)} kcal over`;
+        remCalEl.classList.add("over-target");
+      } else {
+        remCalEl.textContent = `${remCal} kcal left`;
+        remCalEl.classList.remove("over-target");
+      }
+
+      calPctEl.textContent = `${calPct}%`;
+      calPctEl.classList.toggle("over", isOverCal);
+      calFillEl.style.width = `${Math.min(100, Math.max(0, (totalCal / calTarget) * 100))}%`;
+      calFillEl.classList.toggle("over", isOverCal);
+    } else {
+      remCalEl.textContent = "Set target";
+      remCalEl.classList.remove("over-target");
+      calPctEl.textContent = "—";
+      calPctEl.classList.remove("over");
+      calFillEl.style.width = "0%";
+      calFillEl.classList.remove("over");
+    }
+
+    const remProtEl = document.getElementById("remProtText");
+    const protPctEl = document.getElementById("protPctText");
+    const protFillEl = document.getElementById("protProgressFill");
+
+    if (!isNaN(protTarget) && protTarget > 0) {
+      const remProt = Math.round((protTarget - totalProt) * 10) / 10;
+      const protPct = Math.round((totalProt / protTarget) * 100);
+      const isOverProt = totalProt > protTarget;
+
+      if (isOverProt) {
+        remProtEl.textContent = `${Math.abs(remProt).toFixed(1)}g over`;
+        remProtEl.classList.add("over-target");
+      } else {
+        remProtEl.textContent = `${remProt.toFixed(1)}g left`;
+        remProtEl.classList.remove("over-target");
+      }
+
+      protPctEl.textContent = `${protPct}%`;
+      protPctEl.classList.toggle("over", isOverProt);
+      protFillEl.style.width = `${Math.min(100, Math.max(0, (totalProt / protTarget) * 100))}%`;
+      protFillEl.classList.toggle("over", isOverProt);
+    } else {
+      remProtEl.textContent = "Set target";
+      remProtEl.classList.remove("over-target");
+      protPctEl.textContent = "—";
+      protPctEl.classList.remove("over");
+      protFillEl.style.width = "0%";
+      protFillEl.classList.remove("over");
+    }
   }
 
   function renderDailyChart() {
@@ -1858,7 +2153,7 @@
     updateTotalsOnly();
   }
 
-  // Apply restored profile UI immediately on startup
+  // Apply restored profile & targets UI immediately on startup
   switchUser(currentUser);
   loadAllData();
   renderChart();
