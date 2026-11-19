@@ -653,7 +653,7 @@
       box-shadow: 0 1px 4px rgba(124, 58, 237, 0.16);
     }
 
-    /* Compact Target Inputs & Remaining + Bars in Tab 3 */
+    /* Compact Target Inputs & Stacked Long Remaining Bars in Tab 3 */
     .target-inputs-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -691,9 +691,9 @@
     .total-box span { display: block; font-size: 0.7rem; color: var(--totals-muted); text-transform: uppercase; }
     .total-box strong { font-size: 1.25rem; }
 
-    .remaining-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+    .remaining-stack {
+      display: flex;
+      flex-direction: column;
       gap: 8px;
       margin-bottom: 10px;
     }
@@ -704,14 +704,18 @@
       padding: 8px 10px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
       gap: 6px;
     }
-    .rem-top-row {
+    .rem-header-row {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      gap: 4px;
+      gap: 8px;
+    }
+    .rem-title-group {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
     }
     .rem-label {
       font-size: 0.7rem;
@@ -720,7 +724,7 @@
       text-transform: uppercase;
     }
     .rem-pct {
-      font-size: 0.74rem;
+      font-size: 0.76rem;
       font-weight: 800;
       color: var(--text);
     }
@@ -739,7 +743,7 @@
 
     .prog-track {
       width: 100%;
-      height: 8px;
+      height: 9px;
       background: var(--bar-track);
       border-radius: 999px;
       overflow: hidden;
@@ -1081,24 +1085,28 @@
           </div>
         </div>
 
-        <div class="remaining-grid">
+        <div class="remaining-stack">
           <div class="rem-card">
-            <div class="rem-top-row">
-              <span class="rem-label">Remaining Calories</span>
+            <div class="rem-header-row">
+              <div class="rem-title-group">
+                <span class="rem-label">Remaining Calories</span>
+                <span id="remCalText" class="rem-num">—</span>
+              </div>
               <span id="calPctText" class="rem-pct">0%</span>
             </div>
-            <div id="remCalText" class="rem-num">—</div>
             <div class="prog-track">
               <div id="calProgressFill" class="prog-fill cal-fill"></div>
             </div>
           </div>
 
           <div class="rem-card">
-            <div class="rem-top-row">
-              <span class="rem-label">Remaining Protein</span>
+            <div class="rem-header-row">
+              <div class="rem-title-group">
+                <span class="rem-label">Remaining Protein</span>
+                <span id="remProtText" class="rem-num">—</span>
+              </div>
               <span id="protPctText" class="rem-pct">0%</span>
             </div>
-            <div id="remProtText" class="rem-num">—</div>
             <div class="prog-track">
               <div id="protProgressFill" class="prog-fill prot-fill"></div>
             </div>
