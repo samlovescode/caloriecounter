@@ -962,6 +962,24 @@
     .edit-inputs input { width: 74px; padding: 5px 6px; font-size: 0.84rem; }
     .edit-inputs input.edit-name-input { width: 150px; }
 
+    .edit-ref-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding-top: 6px;
+      margin-top: 2px;
+      border-top: 1px dotted var(--border);
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+    .edit-ref-row input {
+      width: 64px;
+      padding: 4px 5px;
+      font-size: 0.78rem;
+    }
+
     .meal-subitems {
       margin-top: 10px;
       padding-left: 10px;
@@ -1419,7 +1437,11 @@
       name: uniqueName,
       defaultQty: 1,
       calories: finalCals,
-      protein: finalProtein
+      protein: finalProtein,
+      refWeight: baseGrams,
+      refCalories: baseCals,
+      refProtein: baseProtein,
+      customWeight: targetGrams
     });
 
     const fb = document.getElementById('calcFeedback');
@@ -1578,12 +1600,18 @@
     for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, "").trim());
       if (cols.length >= 5 && cols[2]) {
+        const refWeight = cols.length >= 6 && cols[5] !== "" ? parseFloat(cols[5]) : null;
+        const refCalories = cols.length >= 7 && cols[6] !== "" ? parseFloat(cols[6]) : null;
+        const refProtein = cols.length >= 8 && cols[7] !== "" ? parseFloat(cols[7]) : null;
         rows.push({
           type: cols[0].toLowerCase(),
           group: cols[1],
           name: cols[2],
           calories: parseFloat(cols[3]) || 0,
-          protein: parseFloat(cols[4]) || 0
+          protein: parseFloat(cols[4]) || 0,
+          refWeight: !isNaN(refWeight) && refWeight > 0 ? refWeight : null,
+          refCalories: !isNaN(refCalories) && refCalories >= 0 ? refCalories : null,
+          refProtein: !isNaN(refProtein) && refProtein >= 0 ? refProtein : null
         });
       }
     }
@@ -1618,11 +1646,27 @@
       rows.forEach(r => {
         if (r.type === "single") {
           const parsed = parseQuantityFromName(r.name, r.calories, r.protein);
-          presetSingles.push({ name: parsed.name, defaultQty: parsed.qty, calories: parsed.unitCal, protein: parsed.unitProt });
+          presetSingles.push({
+            name: parsed.name,
+            defaultQty: parsed.qty,
+            calories: parsed.unitCal,
+            protein: parsed.unitProt,
+            refWeight: r.refWeight,
+            refCalories: r.refCalories,
+            refProtein: r.refProtein
+          });
         } else if (r.type === "meal" && r.group) {
           if (!presetMeals[r.group]) presetMeals[r.group] = [];
           const parsed = parseQuantityFromName(r.name, r.calories, r.protein);
-          presetMeals[r.group].push({ name: parsed.name, defaultQty: parsed.qty, calories: parsed.unitCal, protein: parsed.unitProt });
+          presetMeals[r.group].push({
+            name: parsed.name,
+            defaultQty: parsed.qty,
+            calories: parsed.unitCal,
+            protein: parsed.unitProt,
+            refWeight: r.refWeight,
+            refCalories: r.refCalories,
+            refProtein: r.refProtein
+          });
         }
       });
 
@@ -1826,9 +1870,29 @@
 
   function addSingleToChart(item) {
     const addQty = item.defaultQty || 1;
-    const existing = activeChart.find(c => c.kind === "single" && c.name === item.name && Math.abs(c.calories - item.calories) < 0.01);
-    if (existing) { existing.qty += addQty; } else {
-      activeChart.push({ id: crypto.randomUUID(), kind: "single", name: item.name, calories: item.calories, protein: item.protein, qty: addQty, editing: false });
+    const hasCustomW = item.customWeight !== undefined && item.customWeight !== null && item.customWeight !== "";
+    const existing = !hasCustomW
+      ? activeChart.find(c => c.kind === "single" && c.name === item.name && Math.abs(c.calories - item.calories) < 0.01 && !c.customWeight)
+      : null;
+
+    if (existing) {
+      existing.qty += addQty;
+    } else {
+      activeChart.push({
+        id: crypto.randomUUID(),
+        kind: "single",
+        name: item.name,
+        calories: item.calories,
+        protein: item.protein,
+        baseCalories: item.calories,
+        baseProtein: item.protein,
+        refWeight: item.refWeight ?? null,
+        refCalories: item.refCalories ?? null,
+        refProtein: item.refProtein ?? null,
+        customWeight: hasCustomW ? item.customWeight : "",
+        qty: addQty,
+        editing: false
+      });
     }
     renderChart();
   }
@@ -1837,7 +1901,18 @@
     const existing = activeChart.find(c => c.kind === "meal" && c.name === groupName && !c.customized);
     if (existing) { existing.qty += 1; } else {
       const clonedSubitems = presetMeals[groupName].map(sub => ({
-        id: crypto.randomUUID(), name: sub.name, calories: sub.calories, protein: sub.protein, qty: sub.defaultQty || 1, editing: false
+        id: crypto.randomUUID(),
+        name: sub.name,
+        calories: sub.calories,
+        protein: sub.protein,
+        baseCalories: sub.calories,
+        baseProtein: sub.protein,
+        refWeight: sub.refWeight ?? null,
+        refCalories: sub.refCalories ?? null,
+        refProtein: sub.refProtein ?? null,
+        customWeight: "",
+        qty: sub.defaultQty || 1,
+        editing: false
       }));
       activeChart.push({ id: crypto.randomUUID(), kind: "meal", name: groupName, qty: 1, customized: false, items: clonedSubitems });
     }
@@ -1851,7 +1926,15 @@
     const totalProt = parseFloat(document.getElementById("custProt").value) || 0;
     if (!rawName) return;
     const parsed = parseQuantityFromName(rawName, totalCal, totalProt);
-    addSingleToChart({ name: parsed.name, defaultQty: parsed.qty, calories: parsed.unitCal, protein: parsed.unitProt });
+    addSingleToChart({
+      name: parsed.name,
+      defaultQty: parsed.qty,
+      calories: parsed.unitCal,
+      protein: parsed.unitProt,
+      refWeight: null,
+      refCalories: null,
+      refProtein: null
+    });
     e.target.reset();
   }
 
@@ -1904,14 +1987,96 @@
     }
   }
 
+  function recalculateFromWeight(target) {
+    const w = parseFloat(target.customWeight);
+    const rw = parseFloat(target.refWeight);
+    const rc = parseFloat(target.refCalories);
+    const rp = parseFloat(target.refProtein);
+
+    if (!isNaN(w) && w >= 0 && target.customWeight !== "" && !isNaN(rw) && rw > 0) {
+      const ratio = w / rw;
+      if (!isNaN(rc)) target.calories = Math.round(rc * ratio * 100) / 100;
+      if (!isNaN(rp)) target.protein = Math.round(rp * ratio * 100) / 100;
+    } else if (target.customWeight === "" || target.customWeight === null) {
+      if (typeof target.baseCalories === "number") target.calories = target.baseCalories;
+      if (typeof target.baseProtein === "number") target.protein = target.baseProtein;
+    }
+  }
+
+  function syncItemDOM(id, target, parentMealId = null) {
+    const metaEl = document.getElementById(`meta-${id}`);
+    if (metaEl) {
+      const wLabel = target.customWeight !== "" && target.customWeight !== null && target.customWeight !== undefined ? ` (${target.customWeight}g)` : "";
+      metaEl.textContent = `${Math.round(target.calories * target.qty)} kcal • ${(target.protein * target.qty).toFixed(1)}g P${wLabel}`;
+    }
+    const calInp = document.getElementById(`edit-cal-${id}`);
+    if (calInp) calInp.value = Math.round(target.calories * 100) / 100;
+    const protInp = document.getElementById(`edit-prot-${id}`);
+    if (protInp) protInp.value = Math.round(target.protein * 100) / 100;
+
+    if (parentMealId) {
+      const meal = activeChart.find(c => c.id === parentMealId);
+      const mealMeta = document.getElementById(`meal-meta-${parentMealId}`);
+      if (meal && mealMeta) {
+        const mealCal = meal.items.reduce((s, sub) => s + sub.calories * sub.qty, 0) * meal.qty;
+        const mealProt = meal.items.reduce((s, sub) => s + sub.protein * sub.qty, 0) * meal.qty;
+        mealMeta.textContent = `${Math.round(mealCal)} kcal • ${mealProt.toFixed(1)}g P`;
+      }
+    }
+  }
+
+  function updateWeight(id, val, parentMealId = null) {
+    const target = parentMealId
+      ? activeChart.find(c => c.id === parentMealId)?.items.find(s => s.id === id)
+      : activeChart.find(c => c.id === id);
+    if (!target) return;
+
+    if (parentMealId) {
+      const meal = activeChart.find(c => c.id === parentMealId);
+      if (meal) meal.customized = true;
+    }
+
+    target.customWeight = val;
+    recalculateFromWeight(target);
+    syncItemDOM(id, target, parentMealId);
+    updateTotalsOnly();
+    persistActiveChart();
+  }
+
+  function updateRefField(id, field, val, parentMealId = null) {
+    const target = parentMealId
+      ? activeChart.find(c => c.id === parentMealId)?.items.find(s => s.id === id)
+      : activeChart.find(c => c.id === id);
+    if (!target) return;
+
+    if (parentMealId) {
+      const meal = activeChart.find(c => c.id === parentMealId);
+      if (meal) meal.customized = true;
+    }
+
+    const parsed = val === "" ? null : Math.max(0, parseFloat(val) || 0);
+    target[field] = parsed;
+    recalculateFromWeight(target);
+    syncItemDOM(id, target, parentMealId);
+    updateTotalsOnly();
+    persistActiveChart();
+  }
+
   function updateMacros(id, field, val, parentMealId = null) {
     const num = Math.max(0, parseFloat(val) || 0);
     if (!parentMealId) {
       const item = activeChart.find(c => c.id === id);
       if (item) {
         item[field] = num;
+        if (!item.customWeight) {
+          if (field === "calories") item.baseCalories = num;
+          if (field === "protein") item.baseProtein = num;
+        }
         const metaEl = document.getElementById(`meta-${id}`);
-        if (metaEl) metaEl.textContent = `${Math.round(item.calories * item.qty)} kcal • ${(item.protein * item.qty).toFixed(1)}g P`;
+        if (metaEl) {
+          const wLabel = item.customWeight !== "" && item.customWeight !== null && item.customWeight !== undefined ? ` (${item.customWeight}g)` : "";
+          metaEl.textContent = `${Math.round(item.calories * item.qty)} kcal • ${(item.protein * item.qty).toFixed(1)}g P${wLabel}`;
+        }
       }
     } else {
       const meal = activeChart.find(c => c.id === parentMealId);
@@ -1920,8 +2085,11 @@
         const sub = meal.items.find(s => s.id === id);
         if (sub) {
           sub[field] = num;
-          const metaEl = document.getElementById(`meta-${id}`);
-          if (metaEl) metaEl.textContent = `${Math.round(sub.calories * sub.qty)} kcal • ${(sub.protein * sub.qty).toFixed(1)}g P`;
+          if (!sub.customWeight) {
+            if (field === "calories") sub.baseCalories = num;
+            if (field === "protein") sub.baseProtein = num;
+          }
+          syncItemDOM(id, sub, parentMealId);
         }
       }
     }
@@ -1936,9 +2104,22 @@
     const meal = activeChart.find(c => c.id === mealId);
     if (meal && preset) {
       meal.customized = true;
-      const existingSub = meal.items.find(s => s.name === preset.name);
+      const existingSub = meal.items.find(s => s.name === preset.name && !s.customWeight);
       if (existingSub) { existingSub.qty += (preset.defaultQty || 1); } else {
-        meal.items.push({ id: crypto.randomUUID(), name: preset.name, calories: preset.calories, protein: preset.protein, qty: preset.defaultQty || 1, editing: false });
+        meal.items.push({
+          id: crypto.randomUUID(),
+          name: preset.name,
+          calories: preset.calories,
+          protein: preset.protein,
+          baseCalories: preset.calories,
+          baseProtein: preset.protein,
+          refWeight: preset.refWeight ?? null,
+          refCalories: preset.refCalories ?? null,
+          refProtein: preset.refProtein ?? null,
+          customWeight: "",
+          qty: preset.defaultQty || 1,
+          editing: false
+        });
       }
       renderChart();
     }
@@ -2144,11 +2325,27 @@
     const flat = [];
     activeChart.forEach(entry => {
       if (entry.kind === "single") {
-        flat.push({ name: entry.name, qty: entry.qty, calories: entry.calories * entry.qty, protein: entry.protein * entry.qty });
+        flat.push({
+          name: entry.name,
+          qty: entry.qty,
+          calories: entry.calories * entry.qty,
+          protein: entry.protein * entry.qty,
+          refWeight: entry.refWeight ?? "",
+          refCalories: entry.refCalories ?? "",
+          refProtein: entry.refProtein ?? ""
+        });
       } else if (entry.kind === "meal") {
         entry.items.forEach(sub => {
           const totalSubQty = sub.qty * entry.qty;
-          flat.push({ name: sub.name, qty: totalSubQty, calories: sub.calories * totalSubQty, protein: sub.protein * totalSubQty });
+          flat.push({
+            name: sub.name,
+            qty: totalSubQty,
+            calories: sub.calories * totalSubQty,
+            protein: sub.protein * totalSubQty,
+            refWeight: sub.refWeight ?? "",
+            refCalories: sub.refCalories ?? "",
+            refProtein: sub.refProtein ?? ""
+          });
         });
       }
     });
@@ -2187,21 +2384,58 @@
     let rowsToAppend = [];
 
     if (flat.length === 1) {
-      rowsToAppend.push({ type: "single", group: "", name: presetName, calories: Math.round(flat[0].calories * 10) / 10, protein: Math.round(flat[0].protein * 10) / 10 });
+      rowsToAppend.push({
+        type: "single",
+        group: "",
+        name: presetName,
+        calories: Math.round(flat[0].calories * 10) / 10,
+        protein: Math.round(flat[0].protein * 10) / 10,
+        refWeight: flat[0].refWeight,
+        refCalories: flat[0].refCalories,
+        refProtein: flat[0].refProtein
+      });
     } else {
       flat.forEach(item => {
         const formattedName = item.qty > 1 ? `${item.name} (x${item.qty})` : item.name;
-        rowsToAppend.push({ type: "meal", group: presetName, name: formattedName, calories: Math.round(item.calories * 10) / 10, protein: Math.round(item.protein * 10) / 10 });
+        rowsToAppend.push({
+          type: "meal",
+          group: presetName,
+          name: formattedName,
+          calories: Math.round(item.calories * 10) / 10,
+          protein: Math.round(item.protein * 10) / 10,
+          refWeight: item.refWeight,
+          refCalories: item.refCalories,
+          refProtein: item.refProtein
+        });
       });
     }
 
     rowsToAppend.forEach(r => {
       const parsed = parseQuantityFromName(r.name, r.calories, r.protein);
+      const rw = r.refWeight !== "" && r.refWeight !== null ? parseFloat(r.refWeight) : null;
+      const rc = r.refCalories !== "" && r.refCalories !== null ? parseFloat(r.refCalories) : null;
+      const rp = r.refProtein !== "" && r.refProtein !== null ? parseFloat(r.refProtein) : null;
       if (r.type === "single") {
-        presetSingles.push({ name: parsed.name, defaultQty: parsed.qty, calories: parsed.unitCal, protein: parsed.unitProt });
+        presetSingles.push({
+          name: parsed.name,
+          defaultQty: parsed.qty,
+          calories: parsed.unitCal,
+          protein: parsed.unitProt,
+          refWeight: rw,
+          refCalories: rc,
+          refProtein: rp
+        });
       } else {
         if (!presetMeals[r.group]) presetMeals[r.group] = [];
-        presetMeals[r.group].push({ name: parsed.name, defaultQty: parsed.qty, calories: parsed.unitCal, protein: parsed.unitProt });
+        presetMeals[r.group].push({
+          name: parsed.name,
+          defaultQty: parsed.qty,
+          calories: parsed.unitCal,
+          protein: parsed.unitProt,
+          refWeight: rw,
+          refCalories: rc,
+          refProtein: rp
+        });
       }
     });
     renderPresetButtons(document.getElementById("searchInput").value.trim().toLowerCase());
@@ -2255,11 +2489,16 @@
       card.className = "chart-card" + (entry.kind === "meal" ? " is-meal" : "");
 
       if (entry.kind === "single") {
+        const wLabel = entry.customWeight !== "" && entry.customWeight !== null && entry.customWeight !== undefined ? ` (${entry.customWeight}g)` : "";
+        const wVal = entry.customWeight ?? "";
+        const rwVal = entry.refWeight ?? "";
+        const rcVal = entry.refCalories ?? "";
+        const rpVal = entry.refProtein ?? "";
         card.innerHTML = `
           <div class="row-main">
             <div>
               <div class="row-title" id="title-${entry.id}">${entry.name}</div>
-              <div id="meta-${entry.id}" style="font-size:0.8rem; color:var(--muted);">${Math.round(entry.calories * entry.qty)} kcal • ${(entry.protein * entry.qty).toFixed(1)}g P</div>
+              <div id="meta-${entry.id}" style="font-size:0.8rem; color:var(--muted);">${Math.round(entry.calories * entry.qty)} kcal • ${(entry.protein * entry.qty).toFixed(1)}g P${wLabel}</div>
             </div>
             <div class="row-controls">
               <div class="qty-badge">
@@ -2271,32 +2510,65 @@
               <button class="icon-btn del" onclick="removeEntry('${entry.id}')">✕</button>
             </div>
           </div>
-          ${entry.editing ? `<div class="edit-inputs"><label>Name: <input type="text" class="edit-name-input" value="${entry.name.replace(/"/g, '&quot;')}" oninput="updateItemName('${entry.id}', this.value)"></label><label>Cal: <input type="number" value="${Math.round(entry.calories * 10) / 10}" oninput="updateMacros('${entry.id}', 'calories', this.value)"></label><label>Prot: <input type="number" step="0.1" value="${Math.round(entry.protein * 10) / 10}" oninput="updateMacros('${entry.id}', 'protein', this.value)"></label></div>` : ""}
+          ${entry.editing ? `
+            <div class="edit-inputs">
+              <label>Name: <input type="text" class="edit-name-input" value="${entry.name.replace(/"/g, '&quot;')}" oninput="updateItemName('${entry.id}', this.value)"></label>
+              <label>Weight (g): <input type="number" step="any" placeholder="—" value="${wVal}" oninput="updateWeight('${entry.id}', this.value)"></label>
+              <label>Cal: <input id="edit-cal-${entry.id}" type="number" step="any" value="${Math.round(entry.calories * 100) / 100}" oninput="updateMacros('${entry.id}', 'calories', this.value)"></label>
+              <label>Prot: <input id="edit-prot-${entry.id}" type="number" step="0.1" value="${Math.round(entry.protein * 100) / 100}" oninput="updateMacros('${entry.id}', 'protein', this.value)"></label>
+              <div class="edit-ref-row">
+                <span>Ref:</span>
+                <label>Serving (g) <input type="number" step="any" placeholder="g" value="${rwVal}" oninput="updateRefField('${entry.id}', 'refWeight', this.value)"></label>
+                <label>Cal <input type="number" step="any" placeholder="kcal" value="${rcVal}" oninput="updateRefField('${entry.id}', 'refCalories', this.value)"></label>
+                <label>Prot <input type="number" step="any" placeholder="g" value="${rpVal}" oninput="updateRefField('${entry.id}', 'refProtein', this.value)"></label>
+              </div>
+            </div>
+          ` : ""}
         `;
       } else {
         const mealCal = entry.items.reduce((s, sub) => s + sub.calories * sub.qty, 0) * entry.qty;
         const mealProt = entry.items.reduce((s, sub) => s + sub.protein * sub.qty, 0) * entry.qty;
 
-        const subHTML = entry.items.map(sub => `
-          <div class="subitem-row">
-            <div class="row-main">
-              <div>
-                <div id="title-${sub.id}" style="font-weight:600; font-size:0.88rem;">${sub.name}</div>
-                <div id="meta-${sub.id}" style="font-size:0.76rem; color:var(--muted);">${Math.round(sub.calories * sub.qty)} kcal • ${(sub.protein * sub.qty).toFixed(1)}g P</div>
-              </div>
-              <div class="row-controls">
-                <div class="qty-badge">
-                  <button onclick="changeQty('${sub.id}', -1, '${entry.id}')">−</button>
-                  <span>${sub.qty}</span>
-                  <button onclick="changeQty('${sub.id}', 1, '${entry.id}')">+</button>
+        const subHTML = entry.items.map(sub => {
+          const subWLabel = sub.customWeight !== "" && sub.customWeight !== null && sub.customWeight !== undefined ? ` (${sub.customWeight}g)` : "";
+          const subWVal = sub.customWeight ?? "";
+          const subRwVal = sub.refWeight ?? "";
+          const subRcVal = sub.refCalories ?? "";
+          const subRpVal = sub.refProtein ?? "";
+          return `
+            <div class="subitem-row">
+              <div class="row-main">
+                <div>
+                  <div id="title-${sub.id}" style="font-weight:600; font-size:0.88rem;">${sub.name}</div>
+                  <div id="meta-${sub.id}" style="font-size:0.76rem; color:var(--muted);">${Math.round(sub.calories * sub.qty)} kcal • ${(sub.protein * sub.qty).toFixed(1)}g P${subWLabel}</div>
                 </div>
-                <button class="icon-btn" onclick="toggleEdit('${sub.id}', '${entry.id}')">Edit</button>
-                <button class="icon-btn del" onclick="removeEntry('${sub.id}', '${entry.id}')">✕</button>
+                <div class="row-controls">
+                  <div class="qty-badge">
+                    <button onclick="changeQty('${sub.id}', -1, '${entry.id}')">−</button>
+                    <span>${sub.qty}</span>
+                    <button onclick="changeQty('${sub.id}', 1, '${entry.id}')">+</button>
+                  </div>
+                  <button class="icon-btn" onclick="toggleEdit('${sub.id}', '${entry.id}')">Edit</button>
+                  <button class="icon-btn del" onclick="removeEntry('${sub.id}', '${entry.id}')">✕</button>
+                </div>
               </div>
+              ${sub.editing ? `
+                <div class="edit-inputs">
+                  <label>Name: <input type="text" class="edit-name-input" value="${sub.name.replace(/"/g, '&quot;')}" oninput="updateItemName('${sub.id}', this.value, '${entry.id}')"></label>
+                  <label>Weight (g): <input type="number" step="any" placeholder="—" value="${subWVal}" oninput="updateWeight('${sub.id}', this.value, '${entry.id}')"></label>
+                  <label>Cal: <input id="edit-cal-${sub.id}" type="number" step="any" value="${Math.round(sub.calories * 100) / 100}" oninput="updateMacros('${sub.id}', 'calories', this.value, '${entry.id}')"></label>
+                  <label>Prot: <input id="edit-prot-${sub.id}" type="number" step="0.1" value="${Math.round(sub.protein * 100) / 100}" oninput="updateMacros('${sub.id}', 'protein', this.value, '${entry.id}')"></label>
+                  <div class="edit-ref-row">
+                    <span>Ref:</span>
+                    <label>Serving (g) <input type="number" step="any" placeholder="g" value="${subRwVal}" oninput="updateRefField('${sub.id}', 'refWeight', this.value, '${entry.id}')"></label>
+                    <label>Cal <input type="number" step="any" placeholder="kcal" value="${subRcVal}" oninput="updateRefField('${sub.id}', 'refCalories', this.value, '${entry.id}')"></label>
+                    <label>Prot <input type="number" step="any" placeholder="g" value="${subRpVal}" oninput="updateRefField('${sub.id}', 'refProtein', this.value, '${entry.id}')"></label>
+                  </div>
+                </div>
+              ` : ""}
             </div>
-            ${sub.editing ? `<div class="edit-inputs"><label>Name: <input type="text" class="edit-name-input" value="${sub.name.replace(/"/g, '&quot;')}" oninput="updateItemName('${sub.id}', this.value, '${entry.id}')"></label><label>Cal: <input type="number" value="${Math.round(sub.calories * 10) / 10}" oninput="updateMacros('${sub.id}', 'calories', this.value, '${entry.id}')"></label><label>Prot: <input type="number" step="0.1" value="${Math.round(sub.protein * 10) / 10}" oninput="updateMacros('${sub.id}', 'protein', this.value, '${entry.id}')"></label></div>` : ""}
-          </div>
-        `).join("");
+          `;
+        }).join("");
 
         const optionsHTML = presetSingles.map((p, i) => `<option value="${i}">${p.name} (${Math.round(p.calories * p.defaultQty)} kcal)</option>`).join("");
 
@@ -2304,7 +2576,7 @@
           <div class="row-main">
             <div>
               <div class="row-title">🍽️ ${entry.name}</div>
-              <div style="font-size:0.8rem; color:var(--muted);">${Math.round(mealCal)} kcal • ${mealProt.toFixed(1)}g P</div>
+              <div id="meal-meta-${entry.id}" style="font-size:0.8rem; color:var(--muted);">${Math.round(mealCal)} kcal • ${mealProt.toFixed(1)}g P</div>
             </div>
             <div class="row-controls">
               <div class="qty-badge">
