@@ -21,9 +21,9 @@
 
       /* Profile Colors */
       --user-usamuel: #2563eb;
-      --user-kehara: #db2777;
-      --user-kehara-bg: #fce7f3;
-      --user-kehara-border: #fbcfe8;
+      --user-kehara: #7c3aed;
+      --user-kehara-bg: #f3e8ff;
+      --user-kehara-border: #d8b4fe;
     }
 
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
@@ -32,6 +32,14 @@
     /* App Tab Views */
     .app-view { display: none; }
     .app-view.active { display: block; }
+
+    /* Center Tab 1 vertically on tall screens */
+    #tab1.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 88px);
+    }
 
     /* Bottom Navigation Bar (Android Native Feel) */
     .bottom-nav {
@@ -73,6 +81,7 @@
     }
     @media (max-width: 820px) {
       body { padding: 8px; padding-bottom: 72px; }
+      #tab1.active { min-height: calc(100vh - 80px); }
     }
 
     .panel {
@@ -88,6 +97,7 @@
 
     /* Plain Calculator Styles */
     .calc-card {
+      width: 100%;
       max-width: 420px;
       margin: 0 auto;
       background: #ffffff;
@@ -392,20 +402,24 @@
       background: var(--meal);
       color: #fff;
       border: none;
-      border-radius: 6px;
+      border-radius: 7px;
       padding: 6px 10px;
-      font-size: 0.78rem;
+      font-size: 0.8rem;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
     }
     .btn-small-add:hover { background: #0f766e; }
 
-    /* Compact Profile Bar with Sync Icon */
-    .top-action-bar {
+    /* Hidden Sync Button via CSS ID */
+    #syncBtn { display: none; }
+
+    /* Compact Profile Bar Next to Heading */
+    .heading-with-profiles {
       display: flex;
-      gap: 6px;
       align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
     .mini-profile-bar {
       display: inline-flex;
@@ -416,12 +430,12 @@
       border: 1px solid var(--border);
     }
     .mini-profile-tab {
-      padding: 4px 7px;
+      padding: 4px 8px;
       border: none;
       background: transparent;
       border-radius: 5px;
       font-weight: 600;
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       cursor: pointer;
       color: var(--muted);
       transition: all 0.15s;
@@ -435,7 +449,7 @@
       background: var(--user-kehara-bg);
       color: var(--user-kehara);
       border: 1px solid var(--user-kehara-border);
-      box-shadow: 0 1px 2px rgba(219, 39, 119, 0.15);
+      box-shadow: 0 1px 2px rgba(124, 58, 237, 0.14);
     }
 
     .profile-bar {
@@ -468,7 +482,7 @@
       background: var(--user-kehara-bg);
       color: var(--user-kehara);
       border: 1px solid var(--user-kehara-border);
-      box-shadow: 0 1px 4px rgba(219, 39, 119, 0.15);
+      box-shadow: 0 1px 4px rgba(124, 58, 237, 0.14);
     }
 
     .totals-bar {
@@ -649,15 +663,14 @@
     <div class="app-container">
       <div class="panel">
         <h2>
-          Item Calculation
-          <div class="top-action-bar">
-            <button class="btn-small-add" onclick="addChartToTotal()">+ Add to Total</button>
+          <div class="heading-with-profiles">
+            <span>Item Calculation</span>
             <div class="mini-profile-bar">
               <button type="button" id="miniTabUsamuel" class="mini-profile-tab active-usamuel" onclick="switchUser('Usamuel')">👤 Usamuel</button>
               <button type="button" id="miniTabKehara" class="mini-profile-tab" onclick="switchUser('Kehara')">👤 Kehara</button>
             </div>
-            <button class="icon-btn" onclick="loadAllData()" title="Sync with Google Sheets">↻</button>
           </div>
+          <!-- <button id="syncBtn" class="icon-btn" onclick="loadAllData()" title="Sync with Google Sheets">↻</button> -->
         </h2>
         <div id="statusMsg" style="font-size: 0.76rem; color: var(--muted); margin-bottom: 8px;"></div>
 
@@ -666,7 +679,7 @@
             type="text"
             id="searchInput"
             class="search-input"
-            placeholder="Search meals & ingredients..."
+            placeholder="🔍 Search meals & ingredients..."
             oninput="handleSearch()"
           />
           <button id="clearSearchBtn" class="clear-search" onclick="clearSearch()">✕</button>
@@ -700,7 +713,7 @@
 
         <div class="custom-box">
           <button type="button" class="accordion-header" style="margin-top:0; border:none; background:transparent;" onclick="toggleSection('customForm')">
-            <span style="font-size:0.8rem; color:var(--muted);">+ Quick Add Custom Item to Chart</span>
+            <span style="font-size:0.8rem; color:var(--muted);">+ Quick Add</span>
             <span id="customFormArrow">▸</span>
           </button>
           <div id="customFormBody" class="accordion-body collapsed custom-form-body">
@@ -713,7 +726,8 @@
           </div>
         </div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 14px; margin-bottom: 6px;">
+        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-top: 14px; margin-bottom: 6px; flex-wrap: wrap;">
+          <button class="btn-small-add" onclick="addChartToTotal()">+ Add to Total</button>
           <button class="icon-btn save" onclick="openSaveDrawer()">💾 Add to Sheet</button>
           <button class="icon-btn del" onclick="clearChart()">Clear</button>
         </div>
@@ -790,6 +804,11 @@
   </nav>
 
 <script>
+  // Request persistent storage from browser/WebView so local items are retained as long as possible
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist().catch(() => {});
+  }
+
   // Tab Switching Logic
   function switchTab(tabNum) {
     document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
@@ -869,10 +888,21 @@
   // Presets & Daily Log Logic
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTDy23Yds4ganj2jTVPhkWC6ZAsOFb3jsMOg-5lZop7TNVD37um9iI-UNO6UBV2GF8Kxj57morj39K/pub?output=csv";
   const APPS_SCRIPT_SAVE_URL = "https://script.google.com/macros/s/AKfycbzBuIh20txpC9SNlJ6IiUgbIWijXTaFCdb2MjmssEgi-OFTt2_7Vaw2SHM7Vjfp9CazZQ/exec";
+  const ACTIVE_CHART_STORAGE_KEY = "calorie_suite_active_chart";
 
   let presetSingles = [];
   let presetMeals = {};
   let activeChart = [];
+  try {
+    const savedChart = localStorage.getItem(ACTIVE_CHART_STORAGE_KEY);
+    if (savedChart) {
+      const parsedChart = JSON.parse(savedChart);
+      if (Array.isArray(parsedChart)) activeChart = parsedChart;
+    }
+  } catch (e) {
+    activeChart = [];
+  }
+
   let sectionState = { meals: false, singles: false, customForm: false };
 
   // Pagination state (8 items max per page)
@@ -885,6 +915,12 @@
     Usamuel: JSON.parse(localStorage.getItem('usamuel_daily_log') || '[]'),
     Kehara: JSON.parse(localStorage.getItem('kehara_daily_log') || '[]')
   };
+
+  function persistActiveChart() {
+    try {
+      localStorage.setItem(ACTIVE_CHART_STORAGE_KEY, JSON.stringify(activeChart));
+    } catch (e) {}
+  }
 
   function parseQuantityFromName(rawName, totalCal, totalProt) {
     const match = rawName.match(/^(.*?)\s*(?:\(\s*x\s*(\d+)\s*\)|x\s*(\d+))$/i);
@@ -1205,6 +1241,7 @@
         item.name = trimmed;
         const titleEl = document.getElementById(`title-${id}`);
         if (titleEl) titleEl.textContent = trimmed;
+        persistActiveChart();
       }
     } else {
       const meal = activeChart.find(c => c.id === parentMealId);
@@ -1215,6 +1252,7 @@
           sub.name = trimmed;
           const titleEl = document.getElementById(`title-${id}`);
           if (titleEl) titleEl.textContent = trimmed;
+          persistActiveChart();
         }
       }
     }
@@ -1242,6 +1280,7 @@
       }
     }
     updateTotalsOnly();
+    persistActiveChart();
   }
 
   function addItemIntoMeal(mealId, selectEl) {
@@ -1352,7 +1391,7 @@
     const log = userDailyLogs[currentUser];
 
     if (log.length === 0) {
-      list.innerHTML = `<div class="empty-state">${currentUser}'s daily log is empty. Use "+ Add to Total" above.</div>`;
+      list.innerHTML = `<div class="empty-state">${currentUser}'s daily log is empty. Use "+ Add to Total" on Item Calculation.</div>`;
       updateDailyTotalsOnly();
       return;
     }
@@ -1485,6 +1524,7 @@
   }
 
   function renderChart() {
+    persistActiveChart();
     const list = document.getElementById("chartList");
     list.innerHTML = "";
     if (activeChart.length === 0) {
