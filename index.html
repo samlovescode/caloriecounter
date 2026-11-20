@@ -1693,20 +1693,22 @@
     addSingleToChart({
       name: itemName,
       defaultQty: 1,
-      calories: validRefC ?? 0,
-      protein: validRefP ?? 0,
+      calories: 0,
+      protein: 0,
+      baseCalories: 0,
+      baseProtein: 0,
       refWeight: baseGrams,
       refCalories: validRefC,
       refProtein: validRefP,
       customWeight: "",
-      itemMode: "hybrid",
-      isByWeight: false,
-      isHybrid: true
+      itemMode: "weight_only",
+      isByWeight: true,
+      isHybrid: false
     });
 
     closeCalcNamePrompt();
     const fb = document.getElementById('calcFeedback');
-    fb.textContent = `Added "${itemName}" to Item Calculation!`;
+    fb.textContent = `Added "${itemName}" as a weight item!`;
     setTimeout(() => { fb.textContent = ''; }, 2500);
   }
 
