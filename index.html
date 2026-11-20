@@ -569,17 +569,42 @@
       grid-template-columns: 2fr 1fr 1fr auto;
       gap: 6px;
     }
-    .ref-serving-form {
+    .quick-ref-wrap {
+      grid-column: 1 / -1;
+      margin-top: 2px;
+    }
+    .quick-ref-toggle {
+      background: transparent;
+      border: none;
+      padding: 3px 0;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .quick-ref-toggle:hover {
+      color: var(--primary);
+    }
+    .quick-ref-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr auto;
+      grid-template-columns: repeat(3, 1fr);
       gap: 6px;
+      margin-top: 5px;
+    }
+    .quick-ref-grid.collapsed {
+      display: none;
+    }
+    .quick-ref-grid input {
+      padding: 7px 8px;
+      font-size: 0.84rem;
     }
     @media (max-width: 520px) {
       .custom-form { grid-template-columns: 1fr 1fr; }
       .custom-form input[type="text"] { grid-column: span 2; }
-      .custom-form button { grid-column: span 2; padding: 10px; }
-      .ref-serving-form { grid-template-columns: repeat(3, 1fr); }
-      .ref-serving-form button { grid-column: span 3; padding: 10px; }
+      .custom-form button[type="submit"] { grid-column: span 2; padding: 10px; }
     }
     input {
       width: 100%;
@@ -1298,21 +1323,17 @@
               <input type="number" id="custCal" placeholder="Calories" min="0" step="any" />
               <input type="number" id="custProt" placeholder="Protein (g)" min="0" step="any" />
               <button type="submit" class="btn-primary">Add</button>
-            </form>
-          </div>
-        </div>
-
-        <div class="custom-box">
-          <button type="button" class="accordion-header" style="margin-top:0; border:none; background:transparent;" onclick="toggleSection('refServingForm')">
-            <span style="font-size:0.8rem; color:var(--muted);">+ quick add ref serving</span>
-            <span id="refServingFormArrow">▸</span>
-          </button>
-          <div id="refServingFormBody" class="accordion-body collapsed custom-form-body">
-            <form class="ref-serving-form" onsubmit="addRefServingToChart(event)">
-              <input type="number" id="refServingWeight" value="100" placeholder="100g" min="0.1" step="any" />
-              <input type="number" id="refServingCal" placeholder="Calories" min="0" step="any" />
-              <input type="number" id="refServingProt" placeholder="Protein (g)" min="0" step="any" />
-              <button type="submit" class="btn-primary">Add</button>
+              <div class="quick-ref-wrap">
+                <button type="button" class="quick-ref-toggle" onclick="toggleSection('quickRef')">
+                  <span id="quickRefArrow">▸</span>
+                  <span>Ref serving</span>
+                </button>
+                <div id="quickRefBody" class="quick-ref-grid collapsed">
+                  <input type="number" id="custRefWeight" placeholder="Weight (g)" min="0.1" step="any" />
+                  <input type="number" id="custRefCal" placeholder="Calories" min="0" step="any" />
+                  <input type="number" id="custRefProt" placeholder="Protein (g)" min="0" step="any" />
+                </div>
+              </div>
             </form>
           </div>
         </div>
@@ -1609,7 +1630,7 @@
     activeChart = [];
   }
 
-  let sectionState = { meals: false, singles: false, customForm: false, refServingForm: false };
+  let sectionState = { meals: false, singles: false, customForm: false, quickRef: false };
   let targetsExpanded = false;
   let addedToastTimer = null;
 
@@ -1919,12 +1940,12 @@
     document.getElementById("mealsBody").classList.toggle("collapsed", !sectionState.meals);
     document.getElementById("singlesBody").classList.toggle("collapsed", !sectionState.singles);
     document.getElementById("customFormBody").classList.toggle("collapsed", !sectionState.customForm);
-    document.getElementById("refServingFormBody").classList.toggle("collapsed", !sectionState.refServingForm);
+    document.getElementById("quickRefBody").classList.toggle("collapsed", !sectionState.quickRef);
 
     document.getElementById("mealsArrow").textContent = sectionState.meals ? "▾" : "▸";
     document.getElementById("singlesArrow").textContent = sectionState.singles ? "▾" : "▸";
     document.getElementById("customFormArrow").textContent = sectionState.customForm ? "▾" : "▸";
-    document.getElementById("refServingFormArrow").textContent = sectionState.refServingForm ? "▾" : "▸";
+    document.getElementById("quickRefArrow").textContent = sectionState.quickRef ? "▾" : "▸";
   }
 
   function handleSearch() {
@@ -2138,10 +2159,29 @@
     const rawName = document.getElementById("custName").value.trim();
     const rawCal = document.getElementById("custCal").value.trim();
     const rawProt = document.getElementById("custProt").value.trim();
+    const rawRefWeight = document.getElementById("custRefWeight").value.trim();
+    const rawRefCal = document.getElementById("custRefCal").value.trim();
+    const rawRefProt = document.getElementById("custRefProt").value.trim();
 
     if (!rawName) return;
 
-    const isByWeight = rawCal === "" && rawProt === "";
+    const hasRefCal = rawRefCal !== "" && !isNaN(parseFloat(rawRefCal));
+    const hasRefProt = rawRefProt !== "" && !isNaN(parseFloat(rawRefProt));
+    const hasRefWeight = rawRefWeight !== "" && !isNaN(parseFloat(rawRefWeight)) && parseFloat(rawRefWeight) > 0;
+    const hasRefServing = hasRefCal || hasRefProt;
+
+    let refWeight = null;
+    let refCalories = null;
+    let refProtein = null;
+
+    if (hasRefServing) {
+      refWeight = hasRefWeight ? parseFloat(rawRefWeight) : 100;
+      refCalories = hasRefCal ? Math.max(0, parseFloat(rawRefCal) || 0) : null;
+      refProtein = hasRefProt ? Math.max(0, parseFloat(rawRefProt) || 0) : null;
+    }
+
+    const hasDirectMacros = rawCal !== "" || rawProt !== "";
+    const isByWeight = !hasDirectMacros && !hasRefServing;
     const totalCal = rawCal === "" ? 0 : (parseFloat(rawCal) || 0);
     const totalProt = rawProt === "" ? 0 : (parseFloat(rawProt) || 0);
     const parsed = parseQuantityFromName(rawName, totalCal, totalProt);
@@ -2151,65 +2191,13 @@
       defaultQty: parsed.qty,
       calories: parsed.unitCal,
       protein: parsed.unitProt,
-      refWeight: null,
-      refCalories: null,
-      refProtein: null,
+      refWeight: refWeight,
+      refCalories: refCalories,
+      refProtein: refProtein,
       isByWeight: isByWeight
     });
 
     e.target.reset();
-  }
-
-  function addRefServingToChart(e) {
-    e.preventDefault();
-    const weightInput = document.getElementById("refServingWeight");
-    const calInput = document.getElementById("refServingCal");
-    const protInput = document.getElementById("refServingProt");
-
-    const rawWeight = weightInput.value.trim();
-    const rawCal = calInput.value.trim();
-    const rawProt = protInput.value.trim();
-
-    const digits = Math.floor(100 + Math.random() * 900);
-    const letter = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-    const uniqueName = `Item (${digits}${letter})`;
-
-    const hasCal = rawCal !== "" && !isNaN(parseFloat(rawCal));
-    const hasProt = rawProt !== "" && !isNaN(parseFloat(rawProt));
-
-    // If neither ref calories nor ref protein is provided, treat as Type 3 (just by weight)
-    // and do NOT attach a 100g reference weight with nothing to match against.
-    if (!hasCal && !hasProt) {
-      addSingleToChart({
-        name: uniqueName,
-        defaultQty: 1,
-        calories: 0,
-        protein: 0,
-        refWeight: null,
-        refCalories: null,
-        refProtein: null,
-        isByWeight: true
-      });
-    } else {
-      const rw = rawWeight === "" ? 100 : Math.max(0.1, parseFloat(rawWeight) || 100);
-      const rc = hasCal ? Math.max(0, parseFloat(rawCal) || 0) : null;
-      const rp = hasProt ? Math.max(0, parseFloat(rawProt) || 0) : null;
-
-      addSingleToChart({
-        name: uniqueName,
-        defaultQty: 1,
-        calories: rc ?? 0,
-        protein: rp ?? 0,
-        refWeight: rw,
-        refCalories: rc,
-        refProtein: rp,
-        isByWeight: false
-      });
-    }
-
-    weightInput.value = "100";
-    calInput.value = "";
-    protInput.value = "";
   }
 
   function changeQty(id, delta, parentMealId = null) {
