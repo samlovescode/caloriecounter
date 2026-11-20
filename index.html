@@ -569,42 +569,10 @@
       grid-template-columns: 2fr 1fr 1fr auto;
       gap: 6px;
     }
-    .quick-ref-wrap {
-      grid-column: 1 / -1;
-      margin-top: 2px;
-    }
-    .quick-ref-toggle {
-      background: transparent;
-      border: none;
-      padding: 3px 0;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--muted);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .quick-ref-toggle:hover {
-      color: var(--primary);
-    }
-    .quick-ref-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      margin-top: 5px;
-    }
-    .quick-ref-grid.collapsed {
-      display: none;
-    }
-    .quick-ref-grid input {
-      padding: 7px 8px;
-      font-size: 0.84rem;
-    }
     @media (max-width: 520px) {
       .custom-form { grid-template-columns: 1fr 1fr; }
       .custom-form input[type="text"] { grid-column: span 2; }
-      .custom-form button[type="submit"] { grid-column: span 2; padding: 10px; }
+      .custom-form button { grid-column: span 2; padding: 10px; }
     }
     input {
       width: 100%;
@@ -1271,7 +1239,6 @@
               <button type="button" id="miniTabKehara" class="mini-profile-tab" onclick="switchUser('Kehara')">👤 Kehara</button>
             </div>
           </div>
-          <!-- <button id="syncBtn" class="icon-btn" onclick="loadAllData()" title="Sync with Google Sheets">↻</button> -->
         </h2>
         <div id="statusMsg" style="font-size: 0.76rem; color: var(--muted); margin-bottom: 8px;"></div>
 
@@ -1323,17 +1290,6 @@
               <input type="number" id="custCal" placeholder="Calories" min="0" step="any" />
               <input type="number" id="custProt" placeholder="Protein (g)" min="0" step="any" />
               <button type="submit" class="btn-primary">Add</button>
-              <div class="quick-ref-wrap">
-                <button type="button" class="quick-ref-toggle" onclick="toggleSection('quickRef')">
-                  <span id="quickRefArrow">▸</span>
-                  <span>Ref serving</span>
-                </button>
-                <div id="quickRefBody" class="quick-ref-grid collapsed">
-                  <input type="number" id="custRefWeight" placeholder="Weight (g)" min="0.1" step="any" />
-                  <input type="number" id="custRefCal" placeholder="Calories" min="0" step="any" />
-                  <input type="number" id="custRefProt" placeholder="Protein (g)" min="0" step="any" />
-                </div>
-              </div>
             </form>
           </div>
         </div>
@@ -1441,18 +1397,6 @@
           </div>
         </div>
 
-        <!-- # Hidden + log custom button -->
-        <!-- <div class="daily-quick-bar">
-          <button type="button" class="log-custom-btn" onclick="toggleDailyCustomDrawer()">+ log custom</button>
-        </div>
-        <div id="dailyCustomDrawer" class="daily-custom-drawer">
-          <form class="daily-custom-form" onsubmit="submitDailyCustomLog(event)">
-            <input type="number" id="dailyCustCal" placeholder="Calories" min="0" step="any" required />
-            <input type="number" id="dailyCustProt" placeholder="Protein (g)" min="0" step="any" required />
-            <button type="submit" class="btn-primary">Log</button>
-          </form>
-        </div> -->
-
         <div id="dailyChartList" class="chart-list"></div>
       </div>
     </div>
@@ -1475,7 +1419,6 @@
   </nav>
 
 <script>
-  // Request persistent storage from browser/WebView so local items, profile, targets & theme are retained as long as possible
   if (navigator.storage && navigator.storage.persist) {
     navigator.storage.persist().catch(() => {});
   }
@@ -1486,7 +1429,6 @@
   const TARGETS_STORAGE_KEY = "calorie_suite_targets";
   const MERGE_WINDOW_MS = 30 * 60 * 1000;
 
-  // Forces a fresh load of the hosted app without clearing localStorage (theme, profile, targets, chart, daily logs)
   async function forceAppUpdate() {
     const fb = document.getElementById('calcFeedback');
     if (fb) fb.textContent = 'Checking for latest update...';
@@ -1530,10 +1472,8 @@
     });
   }
 
-  // Initialize theme bubble active state
   updateThemeBubbles(normalizeTheme(localStorage.getItem(THEME_STORAGE_KEY)));
 
-  // Tab Switching Logic
   function switchTab(tabNum) {
     document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -1542,7 +1482,6 @@
     document.getElementById('navBtn' + tabNum).classList.add('active');
   }
 
-  // Plain Calculator Logic (Defaults baseGrams to 100 if blank)
   function getEffectiveBaseGrams() {
     const raw = document.getElementById('baseGrams').value.trim();
     if (raw === '') return 100;
@@ -1596,7 +1535,8 @@
       refWeight: baseGrams,
       refCalories: baseCals,
       refProtein: baseProtein,
-      customWeight: targetGrams
+      customWeight: targetGrams,
+      itemMode: "fixed"
     });
 
     const fb = document.getElementById('calcFeedback');
@@ -1613,7 +1553,6 @@
     calculateMacros();
   }
 
-  // Presets & Daily Log Logic
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTDy23Yds4ganj2jTVPhkWC6ZAsOFb3jsMOg-5lZop7TNVD37um9iI-UNO6UBV2GF8Kxj57morj39K/pub?output=csv";
   const APPS_SCRIPT_SAVE_URL = "https://script.google.com/macros/s/AKfycbzBuIh20txpC9SNlJ6IiUgbIWijXTaFCdb2MjmssEgi-OFTt2_7Vaw2SHM7Vjfp9CazZQ/exec";
 
@@ -1630,16 +1569,14 @@
     activeChart = [];
   }
 
-  let sectionState = { meals: false, singles: false, customForm: false, quickRef: false };
+  let sectionState = { meals: false, singles: false, customForm: false };
   let targetsExpanded = false;
   let addedToastTimer = null;
 
-  // Pagination state (8 items max per page)
   const ITEMS_PER_PAGE = 8;
   let mealPage = 1;
   let singlePage = 1;
 
-  // Restore last selected profile (defaults to Usamuel if never set)
   let currentUser = "Usamuel";
   try {
     const savedUser = localStorage.getItem(USER_STORAGE_KEY);
@@ -1648,7 +1585,6 @@
     }
   } catch (e) {}
 
-  // Per-profile targets stored locally
   let userTargets = {
     Usamuel: { calories: "", protein: "" },
     Kehara: { calories: "", protein: "" }
@@ -1678,37 +1614,6 @@
     targetsExpanded = !targetsExpanded;
     document.getElementById("targetsBody").classList.toggle("collapsed", !targetsExpanded);
     document.getElementById("targetsArrow").textContent = targetsExpanded ? "▾" : "▸";
-  }
-
-  function toggleDailyCustomDrawer() {
-    const drawer = document.getElementById("dailyCustomDrawer");
-    if (!drawer) return;
-    const willOpen = !drawer.classList.contains("open");
-    drawer.classList.toggle("open", willOpen);
-    if (willOpen) {
-      document.getElementById("dailyCustCal").focus();
-    }
-  }
-
-  function submitDailyCustomLog(e) {
-    e.preventDefault();
-    const calInput = document.getElementById("dailyCustCal");
-    const protInput = document.getElementById("dailyCustProt");
-    const cal = Math.max(0, parseFloat(calInput.value) || 0);
-    const prot = Math.max(0, parseFloat(protInput.value) || 0);
-
-    appendOrMergeDailyEntry({
-      name: getTimeBasedDefaultName(),
-      calories: cal,
-      protein: prot,
-      subItems: []
-    });
-
-    renderDailyChart();
-    persistDailyLog();
-    e.target.reset();
-    const drawer = document.getElementById("dailyCustomDrawer");
-    if (drawer) drawer.classList.remove("open");
   }
 
   function appendOrMergeDailyEntry(newEntryData) {
@@ -1787,6 +1692,23 @@
     return { name: rawName.trim(), qty: 1, unitCal: totalCal, unitProt: totalProt };
   }
 
+  /**
+   * Determines item mode from sheet columns:
+   * - "weight_only": Calories & Protein columns are blank, and weight reference (Weight + Kcal/XProtein) is present.
+   * - "hybrid": Has fixed Calories/Protein AND has a valid weight reference (Weight > 0 + Kcal/XProtein).
+   * - "fixed": Has fixed Calories/Protein and no weight reference.
+   */
+  function resolveItemMode(hasDirectMacros, validRefWeight, validRefCalories, validRefProtein) {
+    const hasRef = validRefWeight !== null && (validRefCalories !== null || validRefProtein !== null);
+    if (!hasDirectMacros) {
+      return "weight_only";
+    }
+    if (hasRef) {
+      return "hybrid";
+    }
+    return "fixed";
+  }
+
   function parseCSV(text) {
     const lines = text.trim().split(/\r?\n/);
     const rows = [];
@@ -1796,24 +1718,31 @@
         const rawCalStr = cols[3] !== undefined ? cols[3] : "";
         const rawProtStr = cols[4] !== undefined ? cols[4] : "";
         const hasDirectMacros = rawCalStr !== "" || rawProtStr !== "";
+
         const refWeight = cols.length >= 6 && cols[5] !== "" ? parseFloat(cols[5]) : null;
         const refCalories = cols.length >= 7 && cols[6] !== "" ? parseFloat(cols[6]) : null;
         const refProtein = cols.length >= 8 && cols[7] !== "" ? parseFloat(cols[7]) : null;
+
         const validRefWeight = !isNaN(refWeight) && refWeight > 0 ? refWeight : null;
         const validRefCalories = !isNaN(refCalories) && refCalories >= 0 ? refCalories : null;
         const validRefProtein = !isNaN(refProtein) && refProtein >= 0 ? refProtein : null;
-        const isByWeight = !hasDirectMacros;
+
+        const itemMode = resolveItemMode(hasDirectMacros, validRefWeight, validRefCalories, validRefProtein);
+        const isByWeight = itemMode === "weight_only";
+        const isHybrid = itemMode === "hybrid";
 
         rows.push({
           type: cols[0].toLowerCase(),
           group: cols[1] || "",
           name: cols[2],
-          calories: parseFloat(rawCalStr) || 0,
-          protein: parseFloat(rawProtStr) || 0,
+          calories: hasDirectMacros ? (parseFloat(rawCalStr) || 0) : 0,
+          protein: hasDirectMacros ? (parseFloat(rawProtStr) || 0) : 0,
           refWeight: validRefWeight,
           refCalories: validRefCalories,
           refProtein: validRefProtein,
-          isByWeight: isByWeight
+          itemMode: itemMode,
+          isByWeight: isByWeight,
+          isHybrid: isHybrid
         });
       }
     }
@@ -1856,7 +1785,9 @@
             refWeight: r.refWeight,
             refCalories: r.refCalories,
             refProtein: r.refProtein,
-            isByWeight: r.isByWeight
+            itemMode: r.itemMode,
+            isByWeight: r.isByWeight,
+            isHybrid: r.isHybrid
           });
         } else if (r.type === "meal" && r.group) {
           if (!presetMeals[r.group]) presetMeals[r.group] = [];
@@ -1869,7 +1800,9 @@
             refWeight: r.refWeight,
             refCalories: r.refCalories,
             refProtein: r.refProtein,
-            isByWeight: r.isByWeight
+            itemMode: r.itemMode,
+            isByWeight: r.isByWeight,
+            isHybrid: r.isHybrid
           });
         }
       });
@@ -1940,12 +1873,10 @@
     document.getElementById("mealsBody").classList.toggle("collapsed", !sectionState.meals);
     document.getElementById("singlesBody").classList.toggle("collapsed", !sectionState.singles);
     document.getElementById("customFormBody").classList.toggle("collapsed", !sectionState.customForm);
-    document.getElementById("quickRefBody").classList.toggle("collapsed", !sectionState.quickRef);
 
     document.getElementById("mealsArrow").textContent = sectionState.meals ? "▾" : "▸";
     document.getElementById("singlesArrow").textContent = sectionState.singles ? "▾" : "▸";
     document.getElementById("customFormArrow").textContent = sectionState.customForm ? "▾" : "▸";
-    document.getElementById("quickRefArrow").textContent = sectionState.quickRef ? "▾" : "▸";
   }
 
   function handleSearch() {
@@ -1997,7 +1928,6 @@
     document.getElementById("mealCount").textContent = mealNames.length;
     document.getElementById("singleCount").textContent = filteredSingles.length;
 
-    // Pagination for Meals
     const totalMealPages = Math.ceil(mealNames.length / ITEMS_PER_PAGE) || 1;
     if (mealPage > totalMealPages) mealPage = totalMealPages;
     const mealStartIndex = (mealPage - 1) * ITEMS_PER_PAGE;
@@ -2013,7 +1943,6 @@
       mealPaginationEl.style.display = "none";
     }
 
-    // Pagination for Singles
     const totalSinglePages = Math.ceil(filteredSingles.length / ITEMS_PER_PAGE) || 1;
     if (singlePage > totalSinglePages) singlePage = totalSinglePages;
     const singleStartIndex = (singlePage - 1) * ITEMS_PER_PAGE;
@@ -2033,10 +1962,16 @@
       const items = presetMeals[groupName];
       const totCal = items.reduce((s, i) => s + i.calories * i.defaultQty, 0);
       const totProt = items.reduce((s, i) => s + i.protein * i.defaultQty, 0);
-      const hasWeightItems = items.some(i => i.isByWeight);
-      const metaText = hasWeightItems && totCal === 0 && totProt === 0
-        ? `⚖️ by weight`
-        : `${Math.round(totCal)} kcal • ${totProt.toFixed(1)}g P${hasWeightItems ? " • ⚖️ by weight" : ""}`;
+      const hasWeightOnlyItems = items.some(i => i.isByWeight);
+      const hasHybridItems = items.some(i => i.isHybrid || hasReferenceSetup(i));
+
+      let metaText;
+      if (hasWeightOnlyItems && totCal === 0 && totProt === 0) {
+        metaText = `⚖️ by weight`;
+      } else {
+        metaText = `${Math.round(totCal)} kcal • ${totProt.toFixed(1)}g P`;
+        if (hasWeightOnlyItems || hasHybridItems) metaText += ` • ⚖️`;
+      }
 
       const wrapper = document.createElement("div");
       wrapper.className = "item-btn-wrapper";
@@ -2052,9 +1987,15 @@
 
     paginatedSingles.forEach(item => {
       const displayQty = item.defaultQty > 1 ? ` (x${item.defaultQty})` : "";
-      const metaText = item.isByWeight
-        ? `⚖️ by weight`
-        : `${Math.round(item.calories * item.defaultQty)} kcal • ${(item.protein * item.defaultQty).toFixed(1)}g P`;
+      const isHybridPreset = item.isHybrid || (!item.isByWeight && hasReferenceSetup(item));
+      let metaText;
+      if (item.isByWeight) {
+        metaText = `⚖️ by weight`;
+      } else if (isHybridPreset) {
+        metaText = `${Math.round(item.calories * item.defaultQty)} kcal • ${(item.protein * item.defaultQty).toFixed(1)}g P • ⚖️`;
+      } else {
+        metaText = `${Math.round(item.calories * item.defaultQty)} kcal • ${(item.protein * item.defaultQty).toFixed(1)}g P`;
+      }
 
       const wrapper = document.createElement("div");
       wrapper.className = "item-btn-wrapper";
@@ -2097,9 +2038,10 @@
   function addSingleToChart(item) {
     const addQty = item.defaultQty || 1;
     const isByWeight = !!item.isByWeight;
+    const isHybrid = !!item.isHybrid || (!isByWeight && hasReferenceSetup(item));
     const hasCustomW = item.customWeight !== undefined && item.customWeight !== null && item.customWeight !== "";
-    const existing = (!hasCustomW && !isByWeight)
-      ? activeChart.find(c => c.kind === "single" && c.name === item.name && Math.abs(c.calories - item.calories) < 0.01 && !c.customWeight && !c.isByWeight)
+    const existing = (!hasCustomW && !isByWeight && !isHybrid)
+      ? activeChart.find(c => c.kind === "single" && c.name === item.name && Math.abs(c.calories - item.calories) < 0.01 && !c.customWeight && !c.isByWeight && !c.isHybrid)
       : null;
 
     if (existing) {
@@ -2116,7 +2058,9 @@
         refWeight: item.refWeight ?? null,
         refCalories: item.refCalories ?? null,
         refProtein: item.refProtein ?? null,
+        itemMode: item.itemMode || (isByWeight ? "weight_only" : (isHybrid ? "hybrid" : "fixed")),
         isByWeight: isByWeight,
+        isHybrid: isHybrid,
         refExpanded: false,
         customWeight: hasCustomW ? item.customWeight : "",
         qty: addQty,
@@ -2127,28 +2071,36 @@
   }
 
   function addMealToChart(groupName) {
-    const hasWeightSubs = presetMeals[groupName].some(sub => sub.isByWeight);
+    const hasWeightSubs = presetMeals[groupName].some(sub => sub.isByWeight || sub.isHybrid || hasReferenceSetup(sub));
     const existing = !hasWeightSubs
       ? activeChart.find(c => c.kind === "meal" && c.name === groupName && !c.customized)
       : null;
 
-    if (existing) { existing.qty += 1; } else {
-      const clonedSubitems = presetMeals[groupName].map(sub => ({
-        id: crypto.randomUUID(),
-        name: sub.name,
-        calories: sub.calories,
-        protein: sub.protein,
-        baseCalories: sub.calories,
-        baseProtein: sub.protein,
-        refWeight: sub.refWeight ?? null,
-        refCalories: sub.refCalories ?? null,
-        refProtein: sub.refProtein ?? null,
-        isByWeight: !!sub.isByWeight,
-        refExpanded: false,
-        customWeight: "",
-        qty: sub.defaultQty || 1,
-        editing: false
-      }));
+    if (existing) {
+      existing.qty += 1;
+    } else {
+      const clonedSubitems = presetMeals[groupName].map(sub => {
+        const subByWeight = !!sub.isByWeight;
+        const subHybrid = !!sub.isHybrid || (!subByWeight && hasReferenceSetup(sub));
+        return {
+          id: crypto.randomUUID(),
+          name: sub.name,
+          calories: sub.calories,
+          protein: sub.protein,
+          baseCalories: sub.calories,
+          baseProtein: sub.protein,
+          refWeight: sub.refWeight ?? null,
+          refCalories: sub.refCalories ?? null,
+          refProtein: sub.refProtein ?? null,
+          itemMode: sub.itemMode || (subByWeight ? "weight_only" : (subHybrid ? "hybrid" : "fixed")),
+          isByWeight: subByWeight,
+          isHybrid: subHybrid,
+          refExpanded: false,
+          customWeight: "",
+          qty: sub.defaultQty || 1,
+          editing: false
+        };
+      });
       activeChart.push({ id: crypto.randomUUID(), kind: "meal", name: groupName, qty: 1, customized: false, items: clonedSubitems });
     }
     renderChart();
@@ -2159,29 +2111,10 @@
     const rawName = document.getElementById("custName").value.trim();
     const rawCal = document.getElementById("custCal").value.trim();
     const rawProt = document.getElementById("custProt").value.trim();
-    const rawRefWeight = document.getElementById("custRefWeight").value.trim();
-    const rawRefCal = document.getElementById("custRefCal").value.trim();
-    const rawRefProt = document.getElementById("custRefProt").value.trim();
 
     if (!rawName) return;
 
-    const hasRefCal = rawRefCal !== "" && !isNaN(parseFloat(rawRefCal));
-    const hasRefProt = rawRefProt !== "" && !isNaN(parseFloat(rawRefProt));
-    const hasRefWeight = rawRefWeight !== "" && !isNaN(parseFloat(rawRefWeight)) && parseFloat(rawRefWeight) > 0;
-    const hasRefServing = hasRefCal || hasRefProt;
-
-    let refWeight = null;
-    let refCalories = null;
-    let refProtein = null;
-
-    if (hasRefServing) {
-      refWeight = hasRefWeight ? parseFloat(rawRefWeight) : 100;
-      refCalories = hasRefCal ? Math.max(0, parseFloat(rawRefCal) || 0) : null;
-      refProtein = hasRefProt ? Math.max(0, parseFloat(rawRefProt) || 0) : null;
-    }
-
-    const hasDirectMacros = rawCal !== "" || rawProt !== "";
-    const isByWeight = !hasDirectMacros && !hasRefServing;
+    const isByWeight = rawCal === "" && rawProt === "";
     const totalCal = rawCal === "" ? 0 : (parseFloat(rawCal) || 0);
     const totalProt = rawProt === "" ? 0 : (parseFloat(rawProt) || 0);
     const parsed = parseQuantityFromName(rawName, totalCal, totalProt);
@@ -2191,10 +2124,12 @@
       defaultQty: parsed.qty,
       calories: parsed.unitCal,
       protein: parsed.unitProt,
-      refWeight: refWeight,
-      refCalories: refCalories,
-      refProtein: refProtein,
-      isByWeight: isByWeight
+      refWeight: null,
+      refCalories: null,
+      refProtein: null,
+      itemMode: isByWeight ? "weight_only" : "fixed",
+      isByWeight: isByWeight,
+      isHybrid: false
     });
 
     e.target.reset();
@@ -2260,17 +2195,38 @@
     }
   }
 
+  /**
+   * Type 3 (Hybrid) & Type 2 (Weight-only) calculation:
+   * - When a valid weight is entered: scales from refWeight / refCalories / refProtein.
+   * - When weight is cleared/empty:
+   *   - Type 2 (isByWeight): resets to 0
+   *   - Type 3 (hybrid) / Type 1 (fixed): restores fixed baseCalories & baseProtein
+   */
   function recalculateFromWeight(target) {
+    const hasEnteredWeight = target.customWeight !== "" && target.customWeight !== null && target.customWeight !== undefined;
     const w = parseFloat(target.customWeight);
     const rw = parseFloat(target.refWeight);
     const rc = parseFloat(target.refCalories);
     const rp = parseFloat(target.refProtein);
 
-    if (!isNaN(w) && w >= 0 && target.customWeight !== "" && !isNaN(rw) && rw > 0) {
+    if (hasEnteredWeight && !isNaN(w) && w >= 0 && !isNaN(rw) && rw > 0) {
       const ratio = w / rw;
-      target.calories = !isNaN(rc) ? Math.round(rc * ratio * 100) / 100 : 0;
-      target.protein = !isNaN(rp) ? Math.round(rp * ratio * 100) / 100 : 0;
-    } else if (target.customWeight === "" || target.customWeight === null) {
+      if (!isNaN(rc)) {
+        target.calories = Math.round(rc * ratio * 100) / 100;
+      } else if (!target.isByWeight && typeof target.baseCalories === "number") {
+        target.calories = target.baseCalories;
+      } else {
+        target.calories = 0;
+      }
+
+      if (!isNaN(rp)) {
+        target.protein = Math.round(rp * ratio * 100) / 100;
+      } else if (!target.isByWeight && typeof target.baseProtein === "number") {
+        target.protein = target.baseProtein;
+      } else {
+        target.protein = 0;
+      }
+    } else if (!hasEnteredWeight) {
       if (target.isByWeight) {
         target.calories = 0;
         target.protein = 0;
@@ -2345,6 +2301,7 @@
     const prevShow = shouldShowWeightBox(target);
     const parsed = val === "" ? null : Math.max(0, parseFloat(val) || 0);
     target[field] = parsed;
+    target.isHybrid = !target.isByWeight && hasReferenceSetup(target);
     recalculateFromWeight(target);
     const nextShow = shouldShowWeightBox(target);
 
@@ -2399,10 +2356,13 @@
     const meal = activeChart.find(c => c.id === mealId);
     if (meal && preset) {
       meal.customized = true;
-      const existingSub = !preset.isByWeight
-        ? meal.items.find(s => s.name === preset.name && !s.customWeight && !s.isByWeight)
+      const presetHybrid = !!preset.isHybrid || (!preset.isByWeight && hasReferenceSetup(preset));
+      const existingSub = (!preset.isByWeight && !presetHybrid)
+        ? meal.items.find(s => s.name === preset.name && !s.customWeight && !s.isByWeight && !s.isHybrid)
         : null;
-      if (existingSub) { existingSub.qty += (preset.defaultQty || 1); } else {
+      if (existingSub) {
+        existingSub.qty += (preset.defaultQty || 1);
+      } else {
         meal.items.push({
           id: crypto.randomUUID(),
           name: preset.name,
@@ -2413,7 +2373,9 @@
           refWeight: preset.refWeight ?? null,
           refCalories: preset.refCalories ?? null,
           refProtein: preset.refProtein ?? null,
+          itemMode: preset.itemMode || (preset.isByWeight ? "weight_only" : (presetHybrid ? "hybrid" : "fixed")),
           isByWeight: !!preset.isByWeight,
+          isHybrid: presetHybrid,
           refExpanded: false,
           customWeight: "",
           qty: preset.defaultQty || 1,
@@ -2690,32 +2652,32 @@
     const flat = [];
     activeChart.forEach(entry => {
       if (entry.kind === "single") {
-        const hasRef = hasReferenceSetup(entry);
-        const byWeight = !!entry.isByWeight || hasRef;
+        const fixedCal = (typeof entry.baseCalories === "number" ? entry.baseCalories : entry.calories) * entry.qty;
+        const fixedProt = (typeof entry.baseProtein === "number" ? entry.baseProtein : entry.protein) * entry.qty;
         flat.push({
           name: entry.name,
           qty: entry.qty,
-          calories: entry.calories * entry.qty,
-          protein: entry.protein * entry.qty,
+          calories: entry.isByWeight ? 0 : fixedCal,
+          protein: entry.isByWeight ? 0 : fixedProt,
           refWeight: entry.refWeight ?? "",
           refCalories: entry.refCalories ?? "",
           refProtein: entry.refProtein ?? "",
-          isByWeight: byWeight
+          isByWeight: !!entry.isByWeight
         });
       } else if (entry.kind === "meal") {
         entry.items.forEach(sub => {
           const totalSubQty = sub.qty * entry.qty;
-          const hasRef = hasReferenceSetup(sub);
-          const byWeight = !!sub.isByWeight || hasRef;
+          const fixedCal = (typeof sub.baseCalories === "number" ? sub.baseCalories : sub.calories) * totalSubQty;
+          const fixedProt = (typeof sub.baseProtein === "number" ? sub.baseProtein : sub.protein) * totalSubQty;
           flat.push({
             name: sub.name,
             qty: totalSubQty,
-            calories: sub.calories * totalSubQty,
-            protein: sub.protein * totalSubQty,
+            calories: sub.isByWeight ? 0 : fixedCal,
+            protein: sub.isByWeight ? 0 : fixedProt,
             refWeight: sub.refWeight ?? "",
             refCalories: sub.refCalories ?? "",
             refProtein: sub.refProtein ?? "",
-            isByWeight: byWeight
+            isByWeight: !!sub.isByWeight
           });
         });
       }
@@ -2755,7 +2717,7 @@
     let rowsToAppend = [];
 
     if (flat.length === 1) {
-      const saveAsByWeight = !!flat[0].isByWeight;
+      const saveAsByWeight = flat[0].isByWeight && flat[0].calories === 0 && flat[0].protein === 0;
       rowsToAppend.push({
         type: "single",
         group: "",
@@ -2769,7 +2731,7 @@
     } else {
       flat.forEach(item => {
         const formattedName = item.qty > 1 ? `${item.name} (x${item.qty})` : item.name;
-        const saveAsByWeight = !!item.isByWeight;
+        const saveAsByWeight = item.isByWeight && item.calories === 0 && item.protein === 0;
         rowsToAppend.push({
           type: "meal",
           group: presetName,
@@ -2791,16 +2753,23 @@
       const rw = r.refWeight !== "" && r.refWeight !== null ? parseFloat(r.refWeight) : null;
       const rc = r.refCalories !== "" && r.refCalories !== null ? parseFloat(r.refCalories) : null;
       const rp = r.refProtein !== "" && r.refProtein !== null ? parseFloat(r.refProtein) : null;
+      const validRw = !isNaN(rw) && rw > 0 ? rw : null;
+      const validRc = !isNaN(rc) && rc >= 0 ? rc : null;
+      const validRp = !isNaN(rp) && rp >= 0 ? rp : null;
+      const mode = resolveItemMode(!isWeightRow, validRw, validRc, validRp);
+
       if (r.type === "single") {
         presetSingles.push({
           name: parsed.name,
           defaultQty: parsed.qty,
           calories: parsed.unitCal,
           protein: parsed.unitProt,
-          refWeight: rw,
-          refCalories: rc,
-          refProtein: rp,
-          isByWeight: isWeightRow
+          refWeight: validRw,
+          refCalories: validRc,
+          refProtein: validRp,
+          itemMode: mode,
+          isByWeight: mode === "weight_only",
+          isHybrid: mode === "hybrid"
         });
       } else {
         if (!presetMeals[r.group]) presetMeals[r.group] = [];
@@ -2809,10 +2778,12 @@
           defaultQty: parsed.qty,
           calories: parsed.unitCal,
           protein: parsed.unitProt,
-          refWeight: rw,
-          refCalories: rc,
-          refProtein: rp,
-          isByWeight: isWeightRow
+          refWeight: validRw,
+          refCalories: validRc,
+          refProtein: validRp,
+          itemMode: mode,
+          isByWeight: mode === "weight_only",
+          isHybrid: mode === "hybrid"
         });
       }
     });
@@ -2859,7 +2830,7 @@
     const rpVal = item.refProtein ?? "";
     const isRefOpen = !!item.refExpanded;
     const showWeight = shouldShowWeightBox(item);
-    const placeholderVal = item.isByWeight ? "0" : "—";
+    const placeholderVal = item.isByWeight ? "0" : (rwVal ? `${rwVal}g` : "—");
     const mealArg = parentMealId ? `, '${parentMealId}'` : "";
 
     const rightWeightHTML = showWeight ? `
@@ -2972,7 +2943,6 @@
     updateTotalsOnly();
   }
 
-  // Apply restored profile & targets UI immediately on startup
   switchUser(currentUser);
   loadAllData();
   renderChart();
