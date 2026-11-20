@@ -1297,8 +1297,8 @@
 
         <div style="display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-top: 14px; margin-bottom: 6px; flex-wrap: wrap;">
           <span id="addedTotalToast" class="added-total-toast">✓ Added to total</span>
-          <button class="btn-small-add" onclick="addChartToTotal()">+ Add to Total</button>
-          <button class="icon-btn save" onclick="openSaveDrawer()">💾 Add to Sheet</button>
+          <button class="btn-small-add" onclick="addChartToTotal()">+ Add to Today</button>
+          <button class="icon-btn save" onclick="openSaveDrawer()">💾 Save Item </button>
           <button class="icon-btn del" onclick="clearChart()">Clear</button>
         </div>
 
@@ -2754,7 +2754,7 @@
     btn.textContent = "Saving...";
     try {
       await postToAppsScript({ rows: rowsToAppend });
-      feedback.textContent = "Saved to Google Sheets!";
+      feedback.textContent = "Item/Meal Saved!";
       setTimeout(() => {
         btn.disabled = false;
         btn.textContent = "Save";
