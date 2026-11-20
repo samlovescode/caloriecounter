@@ -624,20 +624,23 @@
       gap: 4px;
     }
 
-    /* Glowing Weight Box for Weight-Based Items */
-    .weight-glow-wrap {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 7px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-secondary);
+    /* Glowing Weight Box on Far Right of Item Cards */
+    .weight-right-col {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+    .weight-right-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
     }
     .weight-glow-input {
-      width: 92px;
-      padding: 6px 8px;
-      font-size: 0.9rem;
+      width: 78px;
+      padding: 5px 7px;
+      font-size: 0.86rem;
       font-weight: 700;
       border: 1.5px solid var(--primary);
       border-radius: 7px;
@@ -965,6 +968,19 @@
     }
     .chart-card.is-meal { border-left: 4px solid var(--meal); background: var(--surface-alt); }
 
+    .item-card-layout {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .item-card-left {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      flex: 1;
+      min-width: 0;
+    }
     .row-main {
       display: flex;
       justify-content: space-between;
@@ -975,7 +991,7 @@
     .row-title { font-weight: 600; font-size: 0.94rem; color: var(--text); }
     .row-title.clickable { cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
     .row-title.clickable:hover { color: var(--primary); }
-    .row-controls { display: flex; align-items: center; gap: 6px; }
+    .row-controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
     .daily-breakdown {
       margin-top: 8px;
@@ -1382,7 +1398,8 @@
           </div>
         </div>
 
-        <div class="daily-quick-bar">
+        <!-- # Hidden + log custom button -->
+        <!-- <div class="daily-quick-bar">
           <button type="button" class="log-custom-btn" onclick="toggleDailyCustomDrawer()">+ log custom</button>
         </div>
         <div id="dailyCustomDrawer" class="daily-custom-drawer">
@@ -1391,7 +1408,7 @@
             <input type="number" id="dailyCustProt" placeholder="Protein (g)" min="0" step="any" required />
             <button type="submit" class="btn-primary">Log</button>
           </form>
-        </div>
+        </div> -->
 
         <div id="dailyChartList" class="chart-list"></div>
       </div>
@@ -1424,6 +1441,7 @@
   const USER_STORAGE_KEY = "calorie_suite_current_user";
   const ACTIVE_CHART_STORAGE_KEY = "calorie_suite_active_chart";
   const TARGETS_STORAGE_KEY = "calorie_suite_targets";
+  const MERGE_WINDOW_MS = 30 * 60 * 1000;
 
   // Forces a fresh load of the hosted app without clearing localStorage (theme, profile, targets, chart, daily logs)
   async function forceAppUpdate() {
@@ -1621,6 +1639,7 @@
 
   function toggleDailyCustomDrawer() {
     const drawer = document.getElementById("dailyCustomDrawer");
+    if (!drawer) return;
     const willOpen = !drawer.classList.contains("open");
     drawer.classList.toggle("open", willOpen);
     if (willOpen) {
@@ -1635,22 +1654,56 @@
     const cal = Math.max(0, parseFloat(calInput.value) || 0);
     const prot = Math.max(0, parseFloat(protInput.value) || 0);
 
-    const mealName = getTimeBasedDefaultName();
-    userDailyLogs[currentUser].push({
-      id: crypto.randomUUID(),
-      name: mealName,
+    appendOrMergeDailyEntry({
+      name: getTimeBasedDefaultName(),
       calories: cal,
       protein: prot,
-      qty: 1,
-      editing: false,
-      expanded: false,
       subItems: []
     });
 
     renderDailyChart();
     persistDailyLog();
     e.target.reset();
-    document.getElementById("dailyCustomDrawer").classList.remove("open");
+    const drawer = document.getElementById("dailyCustomDrawer");
+    if (drawer) drawer.classList.remove("open");
+  }
+
+  function appendOrMergeDailyEntry(newEntryData) {
+    const log = userDailyLogs[currentUser];
+    const now = Date.now();
+    const lastEntry = log.length > 0 ? log[log.length - 1] : null;
+    const lastTs = lastEntry && typeof lastEntry.timestamp === "number" ? lastEntry.timestamp : null;
+
+    if (lastEntry && lastTs !== null && (now - lastTs) <= MERGE_WINDOW_MS) {
+      const existingCal = (lastEntry.calories || 0) * (lastEntry.qty || 1);
+      const existingProt = (lastEntry.protein || 0) * (lastEntry.qty || 1);
+      const addedCal = (newEntryData.calories || 0) * (newEntryData.qty || 1);
+      const addedProt = (newEntryData.protein || 0) * (newEntryData.qty || 1);
+
+      lastEntry.qty = 1;
+      lastEntry.calories = existingCal + addedCal;
+      lastEntry.protein = existingProt + addedProt;
+      lastEntry.timestamp = now;
+
+      if (!Array.isArray(lastEntry.subItems)) {
+        lastEntry.subItems = [];
+      }
+      if (Array.isArray(newEntryData.subItems) && newEntryData.subItems.length > 0) {
+        lastEntry.subItems = lastEntry.subItems.concat(newEntryData.subItems);
+      }
+    } else {
+      log.push({
+        id: crypto.randomUUID(),
+        name: newEntryData.name,
+        calories: newEntryData.calories,
+        protein: newEntryData.protein,
+        qty: newEntryData.qty || 1,
+        editing: false,
+        expanded: false,
+        timestamp: now,
+        subItems: Array.isArray(newEntryData.subItems) ? newEntryData.subItems : []
+      });
+    }
   }
 
   function persistActiveChart() {
@@ -1984,6 +2037,18 @@
     await postToAppsScript({ action: "delete", type: type, name: name });
   }
 
+  function hasReferenceSetup(item) {
+    const rw = parseFloat(item.refWeight);
+    const hasRefWeight = !isNaN(rw) && rw > 0;
+    const hasRefCal = item.refCalories !== null && item.refCalories !== undefined && item.refCalories !== "" && !isNaN(parseFloat(item.refCalories));
+    const hasRefProt = item.refProtein !== null && item.refProtein !== undefined && item.refProtein !== "" && !isNaN(parseFloat(item.refProtein));
+    return hasRefWeight && (hasRefCal || hasRefProt);
+  }
+
+  function shouldShowWeightBox(item) {
+    return !!item.isByWeight || hasReferenceSetup(item);
+  }
+
   function addSingleToChart(item) {
     const addQty = item.defaultQty || 1;
     const isByWeight = !!item.isByWeight;
@@ -2170,10 +2235,8 @@
     if (calInp) calInp.value = Math.round(target.calories * 100) / 100;
     const protInp = document.getElementById(`edit-prot-${id}`);
     if (protInp) protInp.value = Math.round(target.protein * 100) / 100;
-    const editWInp = document.getElementById(`edit-weight-${id}`);
-    if (editWInp && document.activeElement !== editWInp) editWInp.value = target.customWeight ?? "";
-    const emphWInp = document.getElementById(`emph-weight-${id}`);
-    if (emphWInp && document.activeElement !== emphWInp) emphWInp.value = target.customWeight ?? "";
+    const rightWInp = document.getElementById(`right-weight-${id}`);
+    if (rightWInp && document.activeElement !== rightWInp) rightWInp.value = target.customWeight ?? "";
 
     if (parentMealId) {
       const meal = activeChart.find(c => c.id === parentMealId);
@@ -2215,9 +2278,17 @@
       if (meal) meal.customized = true;
     }
 
+    const prevShow = shouldShowWeightBox(target);
     const parsed = val === "" ? null : Math.max(0, parseFloat(val) || 0);
     target[field] = parsed;
     recalculateFromWeight(target);
+    const nextShow = shouldShowWeightBox(target);
+
+    if (prevShow !== nextShow) {
+      renderChart();
+      return;
+    }
+
     syncItemDOM(id, target, parentMealId);
     updateTotalsOnly();
     persistActiveChart();
@@ -2349,16 +2420,11 @@
       return;
     }
 
-    const mealName = getTimeBasedDefaultName();
-    const log = userDailyLogs[currentUser];
-    log.push({
-      id: crypto.randomUUID(),
-      name: mealName,
+    appendOrMergeDailyEntry({
+      name: getTimeBasedDefaultName(),
       calories: totalCal,
       protein: totalProt,
       qty: 1,
-      editing: false,
-      expanded: false,
       subItems: breakdownItems
     });
 
@@ -2718,6 +2784,63 @@
     document.getElementById("totalProt").textContent = totalProt.toFixed(1) + " g";
   }
 
+  function renderSingleItemCardHTML(item, parentMealId = null, isSub = false) {
+    const wVal = item.customWeight ?? "";
+    const rwVal = item.refWeight ?? "";
+    const rcVal = item.refCalories ?? "";
+    const rpVal = item.refProtein ?? "";
+    const isRefOpen = !!item.refExpanded;
+    const showWeight = shouldShowWeightBox(item);
+    const placeholderVal = item.isByWeight ? "0" : "—";
+    const mealArg = parentMealId ? `, '${parentMealId}'` : "";
+
+    const rightWeightHTML = showWeight ? `
+      <div class="weight-right-col">
+        <span class="weight-right-label">Weight (g)</span>
+        <input id="right-weight-${item.id}" type="number" class="weight-glow-input" step="any" min="0" placeholder="${placeholderVal}" value="${wVal}" oninput="updateWeight('${item.id}', this.value${mealArg})" />
+      </div>
+    ` : "";
+
+    return `
+      <div class="item-card-layout">
+        <div class="item-card-left">
+          <div>
+            <div class="${isSub ? "" : "row-title"}" id="title-${item.id}" style="${isSub ? "font-weight:600; font-size:0.88rem;" : ""}">${item.name}</div>
+            <div id="meta-${item.id}" style="font-size:${isSub ? "0.76rem" : "0.8rem"}; color:var(--muted);">${formatItemMeta(item)}</div>
+          </div>
+          <div class="row-controls">
+            <div class="qty-badge">
+              <button onclick="changeQty('${item.id}', -1${mealArg})">−</button>
+              <span>${item.qty}</span>
+              <button onclick="changeQty('${item.id}', 1${mealArg})">+</button>
+            </div>
+            <button class="icon-btn" onclick="toggleEdit('${item.id}'${mealArg})">Edit</button>
+            <button class="icon-btn del" onclick="removeEntry('${item.id}'${mealArg})">✕</button>
+          </div>
+        </div>
+        ${rightWeightHTML}
+      </div>
+      ${item.editing ? `
+        <div class="edit-inputs">
+          <label>Name: <input type="text" class="edit-name-input" value="${item.name.replace(/"/g, '&quot;')}" oninput="updateItemName('${item.id}', this.value${mealArg})"></label>
+          <label>Cal: <input id="edit-cal-${item.id}" type="number" step="any" value="${Math.round(item.calories * 100) / 100}" oninput="updateMacros('${item.id}', 'calories', this.value${mealArg})"></label>
+          <label>Prot: <input id="edit-prot-${item.id}" type="number" step="0.1" value="${Math.round(item.protein * 100) / 100}" oninput="updateMacros('${item.id}', 'protein', this.value${mealArg})"></label>
+          <div class="edit-ref-wrap">
+            <button type="button" class="edit-ref-toggle" onclick="toggleRefRow('${item.id}'${mealArg})">
+              <span id="ref-arrow-${item.id}">${isRefOpen ? "▾" : "▸"}</span>
+              <span>Ref serving</span>
+            </button>
+            <div id="ref-row-${item.id}" class="edit-ref-row ${isRefOpen ? "" : "collapsed"}">
+              <label>Serving (g) <input type="number" step="any" placeholder="g" value="${rwVal}" oninput="updateRefField('${item.id}', 'refWeight', this.value${mealArg})"></label>
+              <label>Cal <input type="number" step="any" placeholder="kcal" value="${rcVal}" oninput="updateRefField('${item.id}', 'refCalories', this.value${mealArg})"></label>
+              <label>Prot <input type="number" step="any" placeholder="g" value="${rpVal}" oninput="updateRefField('${item.id}', 'refProtein', this.value${mealArg})"></label>
+            </div>
+          </div>
+        </div>
+      ` : ""}
+    `;
+  }
+
   function renderChart() {
     persistActiveChart();
     const list = document.getElementById("chartList");
@@ -2733,109 +2856,15 @@
       card.className = "chart-card" + (entry.kind === "meal" ? " is-meal" : "");
 
       if (entry.kind === "single") {
-        const wVal = entry.customWeight ?? "";
-        const rwVal = entry.refWeight ?? "";
-        const rcVal = entry.refCalories ?? "";
-        const rpVal = entry.refProtein ?? "";
-        const isRefOpen = !!entry.refExpanded;
-        const weightBoxHTML = entry.isByWeight ? `
-          <div class="weight-glow-wrap">
-            <span>Weight (g):</span>
-            <input id="emph-weight-${entry.id}" type="number" class="weight-glow-input" step="any" min="0" placeholder="0" value="${wVal}" oninput="updateWeight('${entry.id}', this.value)" />
-          </div>
-        ` : "";
-
-        card.innerHTML = `
-          <div class="row-main">
-            <div>
-              <div class="row-title" id="title-${entry.id}">${entry.name}</div>
-              <div id="meta-${entry.id}" style="font-size:0.8rem; color:var(--muted);">${formatItemMeta(entry)}</div>
-              ${weightBoxHTML}
-            </div>
-            <div class="row-controls">
-              <div class="qty-badge">
-                <button onclick="changeQty('${entry.id}', -1)">−</button>
-                <span>${entry.qty}</span>
-                <button onclick="changeQty('${entry.id}', 1)">+</button>
-              </div>
-              <button class="icon-btn" onclick="toggleEdit('${entry.id}')">Edit</button>
-              <button class="icon-btn del" onclick="removeEntry('${entry.id}')">✕</button>
-            </div>
-          </div>
-          ${entry.editing ? `
-            <div class="edit-inputs">
-              <label>Name: <input type="text" class="edit-name-input" value="${entry.name.replace(/"/g, '&quot;')}" oninput="updateItemName('${entry.id}', this.value)"></label>
-              <label>Weight (g): <input id="edit-weight-${entry.id}" type="number" step="any" placeholder="—" value="${wVal}" oninput="updateWeight('${entry.id}', this.value)"></label>
-              <label>Cal: <input id="edit-cal-${entry.id}" type="number" step="any" value="${Math.round(entry.calories * 100) / 100}" oninput="updateMacros('${entry.id}', 'calories', this.value)"></label>
-              <label>Prot: <input id="edit-prot-${entry.id}" type="number" step="0.1" value="${Math.round(entry.protein * 100) / 100}" oninput="updateMacros('${entry.id}', 'protein', this.value)"></label>
-              <div class="edit-ref-wrap">
-                <button type="button" class="edit-ref-toggle" onclick="toggleRefRow('${entry.id}')">
-                  <span id="ref-arrow-${entry.id}">${isRefOpen ? "▾" : "▸"}</span>
-                  <span>Ref serving</span>
-                </button>
-                <div id="ref-row-${entry.id}" class="edit-ref-row ${isRefOpen ? "" : "collapsed"}">
-                  <label>Serving (g) <input type="number" step="any" placeholder="g" value="${rwVal}" oninput="updateRefField('${entry.id}', 'refWeight', this.value)"></label>
-                  <label>Cal <input type="number" step="any" placeholder="kcal" value="${rcVal}" oninput="updateRefField('${entry.id}', 'refCalories', this.value)"></label>
-                  <label>Prot <input type="number" step="any" placeholder="g" value="${rpVal}" oninput="updateRefField('${entry.id}', 'refProtein', this.value)"></label>
-                </div>
-              </div>
-            </div>
-          ` : ""}
-        `;
+        card.innerHTML = renderSingleItemCardHTML(entry, null, false);
       } else {
         const mealCal = entry.items.reduce((s, sub) => s + sub.calories * sub.qty, 0) * entry.qty;
         const mealProt = entry.items.reduce((s, sub) => s + sub.protein * sub.qty, 0) * entry.qty;
 
         const subHTML = entry.items.map(sub => {
-          const subWVal = sub.customWeight ?? "";
-          const subRwVal = sub.refWeight ?? "";
-          const subRcVal = sub.refCalories ?? "";
-          const subRpVal = sub.refProtein ?? "";
-          const isSubRefOpen = !!sub.refExpanded;
-          const subWeightBoxHTML = sub.isByWeight ? `
-            <div class="weight-glow-wrap">
-              <span>Weight (g):</span>
-              <input id="emph-weight-${sub.id}" type="number" class="weight-glow-input" step="any" min="0" placeholder="0" value="${subWVal}" oninput="updateWeight('${sub.id}', this.value, '${entry.id}')" />
-            </div>
-          ` : "";
-
           return `
             <div class="subitem-row">
-              <div class="row-main">
-                <div>
-                  <div id="title-${sub.id}" style="font-weight:600; font-size:0.88rem;">${sub.name}</div>
-                  <div id="meta-${sub.id}" style="font-size:0.76rem; color:var(--muted);">${formatItemMeta(sub)}</div>
-                  ${subWeightBoxHTML}
-                </div>
-                <div class="row-controls">
-                  <div class="qty-badge">
-                    <button onclick="changeQty('${sub.id}', -1, '${entry.id}')">−</button>
-                    <span>${sub.qty}</span>
-                    <button onclick="changeQty('${sub.id}', 1, '${entry.id}')">+</button>
-                  </div>
-                  <button class="icon-btn" onclick="toggleEdit('${sub.id}', '${entry.id}')">Edit</button>
-                  <button class="icon-btn del" onclick="removeEntry('${sub.id}', '${entry.id}')">✕</button>
-                </div>
-              </div>
-              ${sub.editing ? `
-                <div class="edit-inputs">
-                  <label>Name: <input type="text" class="edit-name-input" value="${sub.name.replace(/"/g, '&quot;')}" oninput="updateItemName('${sub.id}', this.value, '${entry.id}')"></label>
-                  <label>Weight (g): <input id="edit-weight-${sub.id}" type="number" step="any" placeholder="—" value="${subWVal}" oninput="updateWeight('${sub.id}', this.value, '${entry.id}')"></label>
-                  <label>Cal: <input id="edit-cal-${sub.id}" type="number" step="any" value="${Math.round(sub.calories * 100) / 100}" oninput="updateMacros('${sub.id}', 'calories', this.value, '${entry.id}')"></label>
-                  <label>Prot: <input id="edit-prot-${sub.id}" type="number" step="0.1" value="${Math.round(sub.protein * 100) / 100}" oninput="updateMacros('${sub.id}', 'protein', this.value, '${entry.id}')"></label>
-                  <div class="edit-ref-wrap">
-                    <button type="button" class="edit-ref-toggle" onclick="toggleRefRow('${sub.id}', '${entry.id}')">
-                      <span id="ref-arrow-${sub.id}">${isSubRefOpen ? "▾" : "▸"}</span>
-                      <span>Ref serving</span>
-                    </button>
-                    <div id="ref-row-${sub.id}" class="edit-ref-row ${isSubRefOpen ? "" : "collapsed"}">
-                      <label>Serving (g) <input type="number" step="any" placeholder="g" value="${subRwVal}" oninput="updateRefField('${sub.id}', 'refWeight', this.value, '${entry.id}')"></label>
-                      <label>Cal <input type="number" step="any" placeholder="kcal" value="${subRcVal}" oninput="updateRefField('${sub.id}', 'refCalories', this.value, '${entry.id}')"></label>
-                      <label>Prot <input type="number" step="any" placeholder="g" value="${subRpVal}" oninput="updateRefField('${sub.id}', 'refProtein', this.value, '${entry.id}')"></label>
-                    </div>
-                  </div>
-                </div>
-              ` : ""}
+              ${renderSingleItemCardHTML(sub, entry.id, true)}
             </div>
           `;
         }).join("");
