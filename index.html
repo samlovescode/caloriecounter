@@ -1052,6 +1052,7 @@
 
     .edit-ref-wrap {
       width: 100%;
+      grid-column: 1 / -1;
       padding-top: 4px;
       margin-top: 2px;
       border-top: 1px dotted var(--border);
@@ -1080,12 +1081,32 @@
       font-size: 0.76rem;
       color: var(--muted);
     }
-    .edit-ref-row.collapsed {
+    .quick-add-ref-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      padding-top: 5px;
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+    .quick-add-ref-row label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .edit-ref-row.collapsed,
+    .quick-add-ref-row.collapsed {
       display: none;
     }
     .edit-ref-row input {
       width: 64px;
       padding: 4px 5px;
+      font-size: 0.78rem;
+    }
+    .quick-add-ref-row input {
+      width: 100%;
+      padding: 5px 6px;
       font-size: 0.78rem;
     }
 
@@ -1295,8 +1316,8 @@
                   <span id="quickAddRefArrow">▸</span>
                   <span>Ref serving</span>
                 </button>
-                <div id="quickAddRefRow" class="edit-ref-row collapsed">
-                  <label>Serving (g) <input type="number" id="custRefWeight" step="any" min="0" placeholder="g" /></label>
+                <div id="quickAddRefRow" class="quick-add-ref-row collapsed">
+                  <label>Serving (g) <input type="number" id="custRefWeight" step="any" min="0" placeholder="100" /></label>
                   <label>Cal <input type="number" id="custRefCal" step="any" min="0" placeholder="kcal" /></label>
                   <label>Prot <input type="number" id="custRefProt" step="any" min="0" placeholder="g" /></label>
                 </div>
@@ -2130,13 +2151,16 @@
 
     if (!rawName) return;
 
-    const parsedRefW = rawRefW !== "" ? parseFloat(rawRefW) : null;
     const parsedRefC = rawRefC !== "" ? parseFloat(rawRefC) : null;
     const parsedRefP = rawRefP !== "" ? parseFloat(rawRefP) : null;
-
-    const validRefW = parsedRefW !== null && !isNaN(parsedRefW) && parsedRefW > 0 ? parsedRefW : null;
     const validRefC = parsedRefC !== null && !isNaN(parsedRefC) && parsedRefC >= 0 ? parsedRefC : null;
     const validRefP = parsedRefP !== null && !isNaN(parsedRefP) && parsedRefP >= 0 ? parsedRefP : null;
+
+    let parsedRefW = rawRefW !== "" ? parseFloat(rawRefW) : null;
+    if ((parsedRefW === null || isNaN(parsedRefW) || parsedRefW <= 0) && (validRefC !== null || validRefP !== null)) {
+      parsedRefW = 100;
+    }
+    const validRefW = parsedRefW !== null && !isNaN(parsedRefW) && parsedRefW > 0 ? parsedRefW : null;
 
     const hasDirectMacros = rawCal !== "" || rawProt !== "";
     const itemMode = resolveItemMode(hasDirectMacros, validRefW, validRefC, validRefP);
@@ -2851,7 +2875,7 @@
     const rpVal = item.refProtein ?? "";
     const isRefOpen = !!item.refExpanded;
     const showWeight = shouldShowWeightBox(item);
-    const placeholderVal = item.isByWeight ? "0" : (rwVal ? `${rwVal}g` : "—");
+    const placeholderVal = "—";
     const mealArg = parentMealId ? `, '${parentMealId}'` : "";
 
     const rightWeightHTML = showWeight ? `
@@ -2891,7 +2915,7 @@
               <span>Ref serving</span>
             </button>
             <div id="ref-row-${item.id}" class="edit-ref-row ${isRefOpen ? "" : "collapsed"}">
-              <label>Serving (g) <input type="number" step="any" placeholder="g" value="${rwVal}" oninput="updateRefField('${item.id}', 'refWeight', this.value${mealArg})"></label>
+              <label>Serving (g) <input type="number" step="any" placeholder="100" value="${rwVal}" oninput="updateRefField('${item.id}', 'refWeight', this.value${mealArg})"></label>
               <label>Cal <input type="number" step="any" placeholder="kcal" value="${rcVal}" oninput="updateRefField('${item.id}', 'refCalories', this.value${mealArg})"></label>
               <label>Prot <input type="number" step="any" placeholder="g" value="${rpVal}" oninput="updateRefField('${item.id}', 'refProtein', this.value${mealArg})"></label>
             </div>
