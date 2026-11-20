@@ -328,6 +328,62 @@
       gap: 8px;
       margin-top: 14px;
     }
+    .calc-name-prompt {
+      display: none;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 9px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+    }
+    .calc-name-prompt.open {
+      display: block;
+    }
+    .calc-name-label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+    .calc-name-row {
+      display: flex;
+      gap: 6px;
+    }
+    .calc-name-row input {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 0.9rem;
+      border: 1.5px solid var(--input-border);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text);
+      outline: none;
+    }
+    .calc-name-row input:focus {
+      border-color: var(--primary);
+    }
+    .calc-name-confirm {
+      padding: 8px 12px;
+      background: var(--meal);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .calc-name-cancel {
+      padding: 8px 10px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--input-border);
+      border-radius: 8px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
     .add-to-calc-btn {
       width: 100%;
       padding: 11px;
@@ -1223,6 +1279,19 @@
 
       <div class="calc-actions">
         <button type="button" class="add-to-calc-btn" onclick="addPlainCalcToItemChart()">Add to calculation</button>
+        <div id="calcNamePrompt" class="calc-name-prompt">
+          <label for="calcItemNameInput" class="calc-name-label">Item name for calculation chart:</label>
+          <div class="calc-name-row">
+            <input
+              type="text"
+              id="calcItemNameInput"
+              placeholder="e.g. Chicken Breast"
+              onkeydown="if (event.key === 'Enter') { event.preventDefault(); confirmNamedCalcItem(); }"
+            />
+            <button type="button" class="calc-name-confirm" onclick="confirmNamedCalcItem()">Add</button>
+            <button type="button" class="calc-name-cancel" onclick="closeCalcNamePrompt()">✕</button>
+          </div>
+        </div>
         <button type="button" class="reset-btn" onclick="resetCalc()">Clear Fields</button>
       </div>
       <div id="calcFeedback" class="calc-feedback"></div>
@@ -1540,11 +1609,36 @@
     document.getElementById('outProtein').textContent = finalProtein + 'g';
   }
 
+  function closeCalcNamePrompt() {
+    const promptEl = document.getElementById('calcNamePrompt');
+    const nameInput = document.getElementById('calcItemNameInput');
+    if (promptEl) promptEl.classList.remove('open');
+    if (nameInput) nameInput.value = '';
+  }
+
   function addPlainCalcToItemChart() {
     const baseGrams = getEffectiveBaseGrams();
-    const baseCals = parseFloat(document.getElementById('baseCals').value) || 0;
-    const baseProtein = parseFloat(document.getElementById('baseProtein').value) || 0;
-    const targetGrams = parseFloat(document.getElementById('targetGrams').value);
+    const rawCalStr = document.getElementById('baseCals').value.trim();
+    const rawProtStr = document.getElementById('baseProtein').value.trim();
+    const baseCals = parseFloat(rawCalStr) || 0;
+    const baseProtein = parseFloat(rawProtStr) || 0;
+    const targetGramsRaw = document.getElementById('targetGrams').value.trim();
+    const targetGrams = parseFloat(targetGramsRaw);
+
+    if (targetGramsRaw === '') {
+      const hasRefMacros = rawCalStr !== '' || rawProtStr !== '';
+      if (!baseGrams || baseGrams <= 0 || !hasRefMacros) {
+        alert("Please enter Nutrition Label Reference values (Calories and/or Protein) first.");
+        return;
+      }
+      const promptEl = document.getElementById('calcNamePrompt');
+      const nameInput = document.getElementById('calcItemNameInput');
+      promptEl.classList.add('open');
+      nameInput.focus();
+      return;
+    }
+
+    closeCalcNamePrompt();
 
     if (!baseGrams || baseGrams <= 0 || isNaN(targetGrams) || targetGrams <= 0) {
       alert("Please enter valid Serving and Portion grams first.");
@@ -1576,12 +1670,53 @@
     setTimeout(() => { fb.textContent = ''; }, 2500);
   }
 
+  function confirmNamedCalcItem() {
+    const nameInput = document.getElementById('calcItemNameInput');
+    const itemName = (nameInput ? nameInput.value : '').trim();
+    if (!itemName) {
+      alert("Please enter an item name.");
+      if (nameInput) nameInput.focus();
+      return;
+    }
+
+    const baseGrams = getEffectiveBaseGrams();
+    const rawCalStr = document.getElementById('baseCals').value.trim();
+    const rawProtStr = document.getElementById('baseProtein').value.trim();
+    const validRefC = rawCalStr !== '' && !isNaN(parseFloat(rawCalStr)) ? Math.max(0, parseFloat(rawCalStr)) : null;
+    const validRefP = rawProtStr !== '' && !isNaN(parseFloat(rawProtStr)) ? Math.max(0, parseFloat(rawProtStr)) : null;
+
+    if (!baseGrams || baseGrams <= 0 || (validRefC === null && validRefP === null)) {
+      alert("Please enter valid Nutrition Label Reference values first.");
+      return;
+    }
+
+    addSingleToChart({
+      name: itemName,
+      defaultQty: 1,
+      calories: validRefC ?? 0,
+      protein: validRefP ?? 0,
+      refWeight: baseGrams,
+      refCalories: validRefC,
+      refProtein: validRefP,
+      customWeight: "",
+      itemMode: "hybrid",
+      isByWeight: false,
+      isHybrid: true
+    });
+
+    closeCalcNamePrompt();
+    const fb = document.getElementById('calcFeedback');
+    fb.textContent = `Added "${itemName}" to Item Calculation!`;
+    setTimeout(() => { fb.textContent = ''; }, 2500);
+  }
+
   function resetCalc() {
     document.getElementById('baseGrams').value = '';
     document.getElementById('baseCals').value = '';
     document.getElementById('baseProtein').value = '';
     document.getElementById('targetGrams').value = '';
     document.getElementById('calcFeedback').textContent = '';
+    closeCalcNamePrompt();
     calculateMacros();
   }
 
