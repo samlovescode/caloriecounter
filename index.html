@@ -1290,6 +1290,17 @@
               <input type="number" id="custCal" placeholder="Calories" min="0" step="any" />
               <input type="number" id="custProt" placeholder="Protein (g)" min="0" step="any" />
               <button type="submit" class="btn-primary">Add</button>
+              <div class="edit-ref-wrap">
+                <button type="button" class="edit-ref-toggle" onclick="toggleQuickAddRefRow()">
+                  <span id="quickAddRefArrow">▸</span>
+                  <span>Ref serving</span>
+                </button>
+                <div id="quickAddRefRow" class="edit-ref-row collapsed">
+                  <label>Serving (g) <input type="number" id="custRefWeight" step="any" min="0" placeholder="g" /></label>
+                  <label>Cal <input type="number" id="custRefCal" step="any" min="0" placeholder="kcal" /></label>
+                  <label>Prot <input type="number" id="custRefProt" step="any" min="0" placeholder="g" /></label>
+                </div>
+              </div>
             </form>
           </div>
         </div>
@@ -1570,6 +1581,7 @@
   }
 
   let sectionState = { meals: false, singles: false, customForm: false };
+  let quickAddRefExpanded = false;
   let targetsExpanded = false;
   let addedToastTimer = null;
 
@@ -1614,6 +1626,12 @@
     targetsExpanded = !targetsExpanded;
     document.getElementById("targetsBody").classList.toggle("collapsed", !targetsExpanded);
     document.getElementById("targetsArrow").textContent = targetsExpanded ? "▾" : "▸";
+  }
+
+  function toggleQuickAddRefRow() {
+    quickAddRefExpanded = !quickAddRefExpanded;
+    document.getElementById("quickAddRefRow").classList.toggle("collapsed", !quickAddRefExpanded);
+    document.getElementById("quickAddRefArrow").textContent = quickAddRefExpanded ? "▾" : "▸";
   }
 
   function appendOrMergeDailyEntry(newEntryData) {
@@ -1692,12 +1710,6 @@
     return { name: rawName.trim(), qty: 1, unitCal: totalCal, unitProt: totalProt };
   }
 
-  /**
-   * Determines item mode from sheet columns:
-   * - "weight_only": Calories & Protein columns are blank, and weight reference (Weight + Kcal/XProtein) is present.
-   * - "hybrid": Has fixed Calories/Protein AND has a valid weight reference (Weight > 0 + Kcal/XProtein).
-   * - "fixed": Has fixed Calories/Protein and no weight reference.
-   */
   function resolveItemMode(hasDirectMacros, validRefWeight, validRefCalories, validRefProtein) {
     const hasRef = validRefWeight !== null && (validRefCalories !== null || validRefProtein !== null);
     if (!hasDirectMacros) {
@@ -2112,11 +2124,27 @@
     const rawCal = document.getElementById("custCal").value.trim();
     const rawProt = document.getElementById("custProt").value.trim();
 
+    const rawRefW = document.getElementById("custRefWeight").value.trim();
+    const rawRefC = document.getElementById("custRefCal").value.trim();
+    const rawRefP = document.getElementById("custRefProt").value.trim();
+
     if (!rawName) return;
 
-    const isByWeight = rawCal === "" && rawProt === "";
-    const totalCal = rawCal === "" ? 0 : (parseFloat(rawCal) || 0);
-    const totalProt = rawProt === "" ? 0 : (parseFloat(rawProt) || 0);
+    const parsedRefW = rawRefW !== "" ? parseFloat(rawRefW) : null;
+    const parsedRefC = rawRefC !== "" ? parseFloat(rawRefC) : null;
+    const parsedRefP = rawRefP !== "" ? parseFloat(rawRefP) : null;
+
+    const validRefW = parsedRefW !== null && !isNaN(parsedRefW) && parsedRefW > 0 ? parsedRefW : null;
+    const validRefC = parsedRefC !== null && !isNaN(parsedRefC) && parsedRefC >= 0 ? parsedRefC : null;
+    const validRefP = parsedRefP !== null && !isNaN(parsedRefP) && parsedRefP >= 0 ? parsedRefP : null;
+
+    const hasDirectMacros = rawCal !== "" || rawProt !== "";
+    const itemMode = resolveItemMode(hasDirectMacros, validRefW, validRefC, validRefP);
+    const isByWeight = itemMode === "weight_only";
+    const isHybrid = itemMode === "hybrid";
+
+    const totalCal = hasDirectMacros ? (parseFloat(rawCal) || 0) : 0;
+    const totalProt = hasDirectMacros ? (parseFloat(rawProt) || 0) : 0;
     const parsed = parseQuantityFromName(rawName, totalCal, totalProt);
 
     addSingleToChart({
@@ -2124,12 +2152,12 @@
       defaultQty: parsed.qty,
       calories: parsed.unitCal,
       protein: parsed.unitProt,
-      refWeight: null,
-      refCalories: null,
-      refProtein: null,
-      itemMode: isByWeight ? "weight_only" : "fixed",
+      refWeight: validRefW,
+      refCalories: validRefC,
+      refProtein: validRefP,
+      itemMode: itemMode,
       isByWeight: isByWeight,
-      isHybrid: false
+      isHybrid: isHybrid
     });
 
     e.target.reset();
@@ -2195,13 +2223,6 @@
     }
   }
 
-  /**
-   * Type 3 (Hybrid) & Type 2 (Weight-only) calculation:
-   * - When a valid weight is entered: scales from refWeight / refCalories / refProtein.
-   * - When weight is cleared/empty:
-   *   - Type 2 (isByWeight): resets to 0
-   *   - Type 3 (hybrid) / Type 1 (fixed): restores fixed baseCalories & baseProtein
-   */
   function recalculateFromWeight(target) {
     const hasEnteredWeight = target.customWeight !== "" && target.customWeight !== null && target.customWeight !== undefined;
     const w = parseFloat(target.customWeight);
