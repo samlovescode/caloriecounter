@@ -163,6 +163,17 @@
       min-height: calc(100vh - 88px);
     }
 
+    /* Tab 2 Full-Height Layout so Notes stays pinned at the very bottom requiring scroll */
+    #tab2.active {
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 88px);
+    }
+    #tab2 .app-container {
+      flex: 1;
+      width: 100%;
+    }
+
     /* Bottom Navigation Bar (Android Native Feel) */
     .bottom-nav {
       position: fixed;
@@ -204,6 +215,7 @@
     @media (max-width: 820px) {
       body { padding: 8px; padding-bottom: 72px; }
       #tab1.active { min-height: calc(100vh - 80px); }
+      #tab2.active { min-height: calc(100vh - 80px); }
     }
 
     .panel {
@@ -490,6 +502,30 @@
       color: var(--primary);
     }
 
+    /* Broadcast Ticker (Q1 from Items Sheet) - Hidden completely if Q1 is blank */
+    .broadcast-marquee-wrap {
+      display: none;
+      margin-top: 8px;
+      overflow: hidden;
+      white-space: nowrap;
+      width: 100%;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .broadcast-marquee-wrap.active {
+      display: block;
+    }
+    .broadcast-marquee-track {
+      display: inline-block;
+      padding-left: 100%;
+      animation: broadcast-scroll 14s linear infinite;
+    }
+    @keyframes broadcast-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+
     /* Preset & Chart Specific Styles */
     .search-wrap { position: relative; margin-bottom: 12px; }
     .search-input {
@@ -630,7 +666,7 @@
       .custom-form input[type="text"] { grid-column: span 2; }
       .custom-form button { grid-column: span 2; padding: 10px; }
     }
-    input {
+    input, textarea {
       width: 100%;
       padding: 9px 10px;
       border: 1px solid var(--border);
@@ -712,9 +748,6 @@
       box-shadow: 0 0 14px rgba(20, 184, 166, 0.5);
     }
 
-    /* Hidden Sync Button via CSS ID */
-    #syncBtn { display: none; }
-
     /* Compact Profile Bar Next to Heading */
     .heading-with-profiles {
       display: flex;
@@ -786,7 +819,7 @@
       box-shadow: 0 1px 4px rgba(124, 58, 237, 0.16);
     }
 
-    /* Tab 3: Collapsed Targets, Stacked Long Consumed Bars, Separate Remaining Box */
+    /* Tab 3: Collapsed Targets + 7-Day Calendar History Inside Targets */
     .targets-collapse-box {
       margin-bottom: 8px;
       border: 1px solid var(--border);
@@ -832,6 +865,80 @@
       padding: 6px 8px;
       font-size: 0.88rem;
       font-weight: 600;
+    }
+
+    /* 7-Day Calendar History Strip Inside Targets */
+    .history-section {
+      margin-top: 10px;
+      padding-top: 9px;
+      border-top: 1px dashed var(--border);
+    }
+    .history-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 7px;
+    }
+    .history-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .history-viewing-tag {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .cal-week-strip {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      align-items: center;
+    }
+    .cal-day-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 36px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      border-top: 4px solid var(--border);
+      background: var(--card);
+      color: var(--text-secondary);
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0 2px;
+      position: relative;
+      transition: transform 0.15s, border-color 0.15s, background 0.15s, color 0.15s;
+    }
+    .cal-day-btn.has-data::after {
+      content: "";
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--meal);
+      margin-top: 2px;
+    }
+    .cal-day-btn.is-today {
+      transform: scale(1.12);
+      height: 40px;
+      border-top-color: var(--meal);
+      font-weight: 800;
+      z-index: 1;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+    .cal-day-btn.is-selected {
+      background: var(--primary);
+      border-color: var(--primary);
+      border-top-color: var(--primary-hover);
+      color: #ffffff;
+    }
+    .cal-day-btn.is-selected.has-data::after {
+      background: #ffffff;
     }
 
     .totals-bar {
@@ -966,53 +1073,6 @@
     .rem-num.cal-high { color: var(--rem-high); }
     .rem-num.cal-mid { color: var(--rem-mid); }
     .rem-num.cal-low { color: var(--rem-low); }
-
-    /* Tab 3 Quick Log Custom Bar & Drawer */
-    .daily-quick-bar {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-    .log-custom-btn {
-      padding: 5px 10px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      border-radius: 7px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      cursor: pointer;
-    }
-    .log-custom-btn:hover {
-      border-color: var(--primary);
-      color: var(--primary);
-    }
-    .daily-custom-drawer {
-      display: none;
-      background: var(--surface-alt);
-      border: 1px solid var(--border);
-      border-radius: 9px;
-      padding: 8px 10px;
-      margin-bottom: 8px;
-    }
-    .daily-custom-drawer.open {
-      display: block;
-    }
-    .daily-custom-form {
-      display: grid;
-      grid-template-columns: 1fr 1fr auto;
-      gap: 6px;
-      align-items: center;
-    }
-    .daily-custom-form input {
-      padding: 7px 8px;
-      font-size: 0.85rem;
-    }
-    .daily-custom-form button {
-      padding: 7px 12px;
-      font-size: 0.8rem;
-    }
 
     .chart-list { display: flex; flex-direction: column; gap: 10px; }
     #dailyChartList { margin-top: 4px; }
@@ -1224,6 +1284,91 @@
     }
 
     .empty-state { text-align: center; color: var(--muted); padding: 28px 12px; font-size: 0.9rem; }
+
+    /* Bottom-Anchored Subtle Notes Section in Tab 2 (Always below all charts & numbers, requires scroll) */
+    .bottom-notes-footer {
+      max-width: 800px;
+      width: 100%;
+      margin: auto auto 0 auto;
+      padding-top: 48px;
+      padding-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .notes-stealth-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      opacity: 0.35;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 6px;
+      transition: opacity 0.2s;
+    }
+    .notes-stealth-btn:hover,
+    .notes-stealth-btn.open {
+      opacity: 0.85;
+    }
+    .notes-drawer {
+      display: none;
+      width: 100%;
+      margin-top: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .notes-drawer.open {
+      display: block;
+    }
+    .notes-drawer-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .notes-drawer-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .notes-clear-btn {
+      background: transparent;
+      border: 1px solid var(--danger-border);
+      color: var(--danger);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .notes-clear-btn:hover {
+      background: var(--danger-bg);
+    }
+    .notes-textarea {
+      width: 100%;
+      min-height: 90px;
+      resize: vertical;
+      font-size: 0.84rem;
+      line-height: 1.4;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: var(--text);
+      outline: none;
+    }
+    .notes-textarea:focus {
+      border-color: var(--primary);
+      background: var(--card);
+    }
   </style>
   <script>
     // Apply saved theme immediately before body paints
@@ -1313,6 +1458,11 @@
           </button>
           <button type="button" class="force-update-btn" onclick="forceAppUpdate()" title="Force reload latest app code (keeps local data)">↻</button>
         </div>
+      </div>
+
+      <!-- Broadcast ticker from Items sheet cell Q1 (hidden completely when Q1 is empty) -->
+      <div id="broadcastTicker" class="broadcast-marquee-wrap" aria-live="polite">
+        <div id="broadcastTickerText" class="broadcast-marquee-track"></div>
       </div>
     </div>
   </div>
@@ -1426,6 +1576,23 @@
         <div id="chartList" class="chart-list" style="margin-top: 12px;"></div>
       </div>
     </div>
+
+    <!-- Subtle Bottom-Anchored Notes Button (Always below all charts & numbers, requires scroll) -->
+    <div class="bottom-notes-footer">
+      <button type="button" id="notesToggleBtn" class="notes-stealth-btn" onclick="toggleNotesDrawer()">Notes</button>
+      <div id="notesDrawer" class="notes-drawer">
+        <div class="notes-drawer-top">
+          <span class="notes-drawer-title">Notes</span>
+          <button type="button" class="notes-clear-btn" onclick="clearLocalNotes()">Clear</button>
+        </div>
+        <textarea
+          id="localNotesInput"
+          class="notes-textarea"
+          placeholder="Write local notes..."
+          oninput="saveLocalNotes()"
+        ></textarea>
+      </div>
+    </div>
   </div>
 
   <!-- TAB 3: TOTAL TODAY -->
@@ -1456,6 +1623,15 @@
                 <label for="protTargetInput">Protein Target</label>
                 <input type="number" id="protTargetInput" placeholder="e.g. 140" min="0" step="any" oninput="updateUserTargets()">
               </div>
+            </div>
+
+            <!-- Past 7 Days Calendar History Strip -->
+            <div class="history-section">
+              <div class="history-header-row">
+                <span class="history-label">History (7 Days)</span>
+                <span id="historyViewingLabel" class="history-viewing-tag">Today</span>
+              </div>
+              <div id="calWeekStrip" class="cal-week-strip"></div>
             </div>
           </div>
         </div>
@@ -1528,7 +1704,140 @@
   const USER_STORAGE_KEY = "calorie_suite_current_user";
   const ACTIVE_CHART_STORAGE_KEY = "calorie_suite_active_chart";
   const TARGETS_STORAGE_KEY = "calorie_suite_targets";
+  const NOTES_STORAGE_KEY = "calorie_suite_local_notes";
+  const WEEK_HISTORY_STORAGE_KEY = "calorie_suite_week_history_v1";
   const MERGE_WINDOW_MS = 30 * 60 * 1000;
+
+  const WEEK_DAYS = [
+    { key: "Mon", label: "Mon", jsDay: 1 },
+    { key: "Tue", label: "Tue", jsDay: 2 },
+    { key: "Wed", label: "Wed", jsDay: 3 },
+    { key: "Thu", label: "Thu", jsDay: 4 },
+    { key: "Fri", label: "Fri", jsDay: 5 },
+    { key: "Sat", label: "Sat", jsDay: 6 },
+    { key: "Sun", label: "Sun", jsDay: 0 }
+  ];
+
+  function getTodayWeekdayKey() {
+    const d = new Date().getDay();
+    const found = WEEK_DAYS.find(w => w.jsDay === d);
+    return found ? found.key : "Mon";
+  }
+
+  function getLocalDateKey(dateObj = new Date()) {
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const d = String(dateObj.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  function createEmptyWeekMap() {
+    return {
+      Mon: { dateKey: "", entries: [] },
+      Tue: { dateKey: "", entries: [] },
+      Wed: { dateKey: "", entries: [] },
+      Thu: { dateKey: "", entries: [] },
+      Fri: { dateKey: "", entries: [] },
+      Sat: { dateKey: "", entries: [] },
+      Sun: { dateKey: "", entries: [] }
+    };
+  }
+
+  function normalizeWeekMap(rawMap) {
+    const base = createEmptyWeekMap();
+    if (!rawMap || typeof rawMap !== "object") return base;
+    WEEK_DAYS.forEach(w => {
+      const slot = rawMap[w.key];
+      if (slot && typeof slot === "object") {
+        base[w.key] = {
+          dateKey: typeof slot.dateKey === "string" ? slot.dateKey : "",
+          entries: Array.isArray(slot.entries) ? slot.entries : []
+        };
+      } else if (Array.isArray(slot)) {
+        base[w.key] = { dateKey: "", entries: slot };
+      }
+    });
+    return base;
+  }
+
+  let userWeekHistory = {
+    Usamuel: createEmptyWeekMap(),
+    Kehara: createEmptyWeekMap()
+  };
+
+  try {
+    const savedHistory = JSON.parse(localStorage.getItem(WEEK_HISTORY_STORAGE_KEY) || "null");
+    if (savedHistory && typeof savedHistory === "object") {
+      userWeekHistory.Usamuel = normalizeWeekMap(savedHistory.Usamuel);
+      userWeekHistory.Kehara = normalizeWeekMap(savedHistory.Kehara);
+    } else {
+      // Migrate any existing legacy daily logs into today's weekday slot
+      const todayKey = getTodayWeekdayKey();
+      const todayDate = getLocalDateKey();
+      const legacyU = JSON.parse(localStorage.getItem('usamuel_daily_log') || '[]');
+      const legacyK = JSON.parse(localStorage.getItem('kehara_daily_log') || '[]');
+      if (Array.isArray(legacyU) && legacyU.length > 0) {
+        userWeekHistory.Usamuel[todayKey] = { dateKey: todayDate, entries: legacyU };
+      }
+      if (Array.isArray(legacyK) && legacyK.length > 0) {
+        userWeekHistory.Kehara[todayKey] = { dateKey: todayDate, entries: legacyK };
+      }
+    }
+  } catch (e) {}
+
+  let activeTodayKey = getTodayWeekdayKey();
+  let activeDateKey = getLocalDateKey();
+  let selectedDayKey = activeTodayKey;
+
+  // Automatically roll over after 12:00 midnight & reset repeated weekday slot
+  function ensureTodaySlotFresh() {
+    const nowTodayKey = getTodayWeekdayKey();
+    const nowDateKey = getLocalDateKey();
+    let rolledOver = false;
+
+    if (nowTodayKey !== activeTodayKey || nowDateKey !== activeDateKey) {
+      activeTodayKey = nowTodayKey;
+      activeDateKey = nowDateKey;
+      selectedDayKey = nowTodayKey;
+      rolledOver = true;
+    }
+
+    ["Usamuel", "Kehara"].forEach(u => {
+      const slot = userWeekHistory[u][nowTodayKey];
+      if (!slot) {
+        userWeekHistory[u][nowTodayKey] = { dateKey: nowDateKey, entries: [] };
+        rolledOver = true;
+      } else if (slot.dateKey && slot.dateKey !== nowDateKey) {
+        // Same weekday repeated (next week) -> reset chart for the new day
+        userWeekHistory[u][nowTodayKey] = { dateKey: nowDateKey, entries: [] };
+        rolledOver = true;
+      } else if (!slot.dateKey) {
+        slot.dateKey = nowDateKey;
+      }
+    });
+
+    if (rolledOver) {
+      saveLocalWeekHistoryOnly();
+    }
+    return rolledOver;
+  }
+
+  function saveLocalWeekHistoryOnly() {
+    try {
+      localStorage.setItem(WEEK_HISTORY_STORAGE_KEY, JSON.stringify(userWeekHistory));
+      localStorage.setItem('usamuel_daily_log', JSON.stringify(userWeekHistory.Usamuel[activeTodayKey].entries));
+      localStorage.setItem('kehara_daily_log', JSON.stringify(userWeekHistory.Kehara[activeTodayKey].entries));
+    } catch (e) {}
+  }
+
+  ensureTodaySlotFresh();
+
+  // Check every 30s if midnight has passed while the app is open
+  setInterval(() => {
+    if (ensureTodaySlotFresh()) {
+      renderDailyChart();
+    }
+  }, 30000);
 
   async function forceAppUpdate() {
     const fb = document.getElementById('calcFeedback');
@@ -1575,12 +1884,31 @@
 
   updateThemeBubbles(normalizeTheme(localStorage.getItem(THEME_STORAGE_KEY)));
 
+  function updateBroadcastTicker(message) {
+    const wrap = document.getElementById("broadcastTicker");
+    const track = document.getElementById("broadcastTickerText");
+    if (!wrap || !track) return;
+    const cleanMsg = (message || "").toString().trim();
+    if (!cleanMsg) {
+      track.textContent = "";
+      wrap.classList.remove("active");
+    } else {
+      track.textContent = cleanMsg;
+      wrap.classList.add("active");
+    }
+  }
+
   function switchTab(tabNum) {
     document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
     document.getElementById('tab' + tabNum).classList.add('active');
     document.getElementById('navBtn' + tabNum).classList.add('active');
+    if (tabNum === 3) {
+      if (ensureTodaySlotFresh()) {
+        renderDailyChart();
+      }
+    }
   }
 
   function getEffectiveBaseGrams() {
@@ -1722,6 +2050,38 @@
     calculateMacros();
   }
 
+  /* Bottom Notes Section Logic */
+  let notesDrawerOpen = false;
+  function toggleNotesDrawer() {
+    notesDrawerOpen = !notesDrawerOpen;
+    document.getElementById("notesDrawer").classList.toggle("open", notesDrawerOpen);
+    document.getElementById("notesToggleBtn").classList.toggle("open", notesDrawerOpen);
+    if (notesDrawerOpen) {
+      document.getElementById("localNotesInput").focus();
+    }
+  }
+
+  function loadLocalNotes() {
+    try {
+      const saved = localStorage.getItem(NOTES_STORAGE_KEY) || "";
+      document.getElementById("localNotesInput").value = saved;
+    } catch (e) {}
+  }
+
+  function saveLocalNotes() {
+    try {
+      const val = document.getElementById("localNotesInput").value;
+      localStorage.setItem(NOTES_STORAGE_KEY, val);
+    } catch (e) {}
+  }
+
+  function clearLocalNotes() {
+    document.getElementById("localNotesInput").value = "";
+    try {
+      localStorage.removeItem(NOTES_STORAGE_KEY);
+    } catch (e) {}
+  }
+
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTDy23Yds4ganj2jTVPhkWC6ZAsOFb3jsMOg-5lZop7TNVD37um9iI-UNO6UBV2GF8Kxj57morj39K/pub?output=csv";
   const APPS_SCRIPT_SAVE_URL = "https://script.google.com/macros/s/AKfycbzBuIh20txpC9SNlJ6IiUgbIWijXTaFCdb2MjmssEgi-OFTt2_7Vaw2SHM7Vjfp9CazZQ/exec";
 
@@ -1775,15 +2135,74 @@
     }
   } catch (e) {}
 
-  let userDailyLogs = {
-    Usamuel: JSON.parse(localStorage.getItem('usamuel_daily_log') || '[]'),
-    Kehara: JSON.parse(localStorage.getItem('kehara_daily_log') || '[]')
-  };
+  function getActiveDaySlot(user = currentUser, dayKey = selectedDayKey) {
+    ensureTodaySlotFresh();
+    if (!userWeekHistory[user]) {
+      userWeekHistory[user] = createEmptyWeekMap();
+    }
+    if (!userWeekHistory[user][dayKey]) {
+      userWeekHistory[user][dayKey] = {
+        dateKey: dayKey === activeTodayKey ? activeDateKey : "",
+        entries: []
+      };
+    }
+    return userWeekHistory[user][dayKey];
+  }
+
+  function getActiveDailyEntries() {
+    return getActiveDaySlot(currentUser, selectedDayKey).entries;
+  }
+
+  function selectHistoryDay(dayKey) {
+    ensureTodaySlotFresh();
+    selectedDayKey = dayKey;
+    renderDailyChart();
+  }
+
+  function renderWeekHistoryStrip() {
+    ensureTodaySlotFresh();
+    const strip = document.getElementById("calWeekStrip");
+    const labelEl = document.getElementById("historyViewingLabel");
+    if (!strip) return;
+
+    strip.innerHTML = "";
+    const userMap = userWeekHistory[currentUser] || createEmptyWeekMap();
+
+    if (labelEl) {
+      if (selectedDayKey === activeTodayKey) {
+        labelEl.textContent = `Today (${activeTodayKey})`;
+      } else {
+        const slot = userMap[selectedDayKey];
+        labelEl.textContent = slot && slot.dateKey ? `${selectedDayKey} • ${slot.dateKey}` : selectedDayKey;
+      }
+    }
+
+    WEEK_DAYS.forEach(w => {
+      const slot = userMap[w.key] || { dateKey: "", entries: [] };
+      const hasEntries = Array.isArray(slot.entries) && slot.entries.length > 0;
+      const isToday = w.key === activeTodayKey;
+      const isSelected = w.key === selectedDayKey;
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "cal-day-btn"
+        + (isToday ? " is-today" : "")
+        + (isSelected ? " is-selected" : "")
+        + (hasEntries ? " has-data" : "");
+      btn.textContent = w.label;
+      btn.title = slot.dateKey ? `${w.label} (${slot.dateKey})` : w.label;
+      btn.onclick = () => selectHistoryDay(w.key);
+      strip.appendChild(btn);
+    });
+  }
 
   function toggleTargetsAccordion() {
     targetsExpanded = !targetsExpanded;
     document.getElementById("targetsBody").classList.toggle("collapsed", !targetsExpanded);
     document.getElementById("targetsArrow").textContent = targetsExpanded ? "▾" : "▸";
+    if (targetsExpanded) {
+      renderWeekHistoryStrip();
+    }
   }
 
   function toggleQuickAddRefRow() {
@@ -1793,7 +2212,13 @@
   }
 
   function appendOrMergeDailyEntry(newEntryData) {
-    const log = userDailyLogs[currentUser];
+    ensureTodaySlotFresh();
+    // Always add new meals/items onto Today's slot and focus Today
+    selectedDayKey = activeTodayKey;
+    const slot = getActiveDaySlot(currentUser, activeTodayKey);
+    slot.dateKey = activeDateKey;
+    const log = slot.entries;
+
     const now = Date.now();
     const lastEntry = log.length > 0 ? log[log.length - 1] : null;
     const lastTs = lastEntry && typeof lastEntry.timestamp === "number" ? lastEntry.timestamp : null;
@@ -1882,6 +2307,16 @@
   function parseCSV(text) {
     const lines = text.trim().split(/\r?\n/);
     const rows = [];
+    let broadcastFromCsv = "";
+
+    // Check Header Row Column Q (index 16) for cell Q1 broadcast message
+    if (lines.length > 0) {
+      const headerCols = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, "").trim());
+      if (headerCols.length >= 17 && headerCols[16]) {
+        broadcastFromCsv = headerCols[16];
+      }
+    }
+
     for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, "").trim());
       if (cols.length >= 3 && cols[2]) {
@@ -1916,7 +2351,7 @@
         });
       }
     }
-    return rows;
+    return { rows, broadcastFromCsv };
   }
 
   async function postToAppsScript(payload) {
@@ -1939,7 +2374,7 @@
       ]);
 
       const csvText = await csvRes.text();
-      const rows = parseCSV(csvText);
+      const { rows, broadcastFromCsv } = parseCSV(csvText);
 
       presetSingles = [];
       presetMeals = {};
@@ -1977,15 +2412,28 @@
         }
       });
 
+      let broadcastMessage = broadcastFromCsv;
+
       if (logsRes && logsRes.ok) {
         const logData = await logsRes.json();
-        if (logData.status === "ok" && logData.logs) {
-          if (Array.isArray(logData.logs.Usamuel)) userDailyLogs.Usamuel = logData.logs.Usamuel;
-          if (Array.isArray(logData.logs.Kehara)) userDailyLogs.Kehara = logData.logs.Kehara;
-          localStorage.setItem('usamuel_daily_log', JSON.stringify(userDailyLogs.Usamuel));
-          localStorage.setItem('kehara_daily_log', JSON.stringify(userDailyLogs.Kehara));
+        if (logData.status === "ok") {
+          if (typeof logData.broadcast === "string") {
+            broadcastMessage = logData.broadcast;
+          }
+          if (logData.weekHistory) {
+            if (logData.weekHistory.Usamuel) {
+              userWeekHistory.Usamuel = normalizeWeekMap(logData.weekHistory.Usamuel);
+            }
+            if (logData.weekHistory.Kehara) {
+              userWeekHistory.Kehara = normalizeWeekMap(logData.weekHistory.Kehara);
+            }
+            ensureTodaySlotFresh();
+            saveLocalWeekHistoryOnly();
+          }
         }
       }
+
+      updateBroadcastTicker(broadcastMessage);
 
       status.textContent = `Synced (${Object.keys(presetMeals).length} meals, ${presetSingles.length} items)`;
       renderPresetButtons(document.getElementById("searchInput").value.trim().toLowerCase());
@@ -1996,12 +2444,24 @@
   }
 
   function persistDailyLog() {
-    localStorage.setItem('usamuel_daily_log', JSON.stringify(userDailyLogs.Usamuel));
-    localStorage.setItem('kehara_daily_log', JSON.stringify(userDailyLogs.Kehara));
+    ensureTodaySlotFresh();
+    saveLocalWeekHistoryOnly();
+
+    const slot = getActiveDaySlot(currentUser, selectedDayKey);
+    const dayCal = slot.entries.reduce((sum, e) => sum + e.calories * e.qty, 0);
+    const dayProt = slot.entries.reduce((sum, e) => sum + e.protein * e.qty, 0);
+    const summaryDateKey = slot.dateKey || (selectedDayKey === activeTodayKey ? activeDateKey : "");
+
     postToAppsScript({
-      action: "saveLog",
+      action: "saveWeekHistory",
       user: currentUser,
-      chart: userDailyLogs[currentUser]
+      weekHistory: userWeekHistory[currentUser],
+      dateSummary: summaryDateKey ? {
+        dateKey: summaryDateKey,
+        dayLabel: selectedDayKey,
+        calories: dayCal,
+        protein: dayProt
+      } : null
     }).catch(() => {});
   }
 
@@ -2642,7 +3102,7 @@
   }
 
   function toggleDailyBreakdown(id) {
-    const log = userDailyLogs[currentUser];
+    const log = getActiveDailyEntries();
     const target = log.find(c => c.id === id);
     if (target && Array.isArray(target.subItems) && target.subItems.length > 0) {
       target.expanded = !target.expanded;
@@ -2651,7 +3111,7 @@
   }
 
   function changeDailyQty(id, delta) {
-    const log = userDailyLogs[currentUser];
+    const log = getActiveDailyEntries();
     const idx = log.findIndex(c => c.id === id);
     if (idx === -1) return;
     log[idx].qty += delta;
@@ -2661,13 +3121,13 @@
   }
 
   function toggleDailyEdit(id) {
-    const log = userDailyLogs[currentUser];
+    const log = getActiveDailyEntries();
     const target = log.find(c => c.id === id);
     if (target) { target.editing = !target.editing; renderDailyChart(); }
   }
 
   function updateDailyName(id, val) {
-    const log = userDailyLogs[currentUser];
+    const log = getActiveDailyEntries();
     const item = log.find(c => c.id === id);
     if (item && val.trim()) {
       item.name = val.trim();
@@ -2678,7 +3138,7 @@
   }
 
   function updateDailyMacros(id, field, val) {
-    const log = userDailyLogs[currentUser];
+    const log = getActiveDailyEntries();
     const num = Math.max(0, parseFloat(val) || 0);
     const item = log.find(c => c.id === id);
     if (item) item[field] = num;
@@ -2687,14 +3147,17 @@
   }
 
   function removeDailyEntry(id) {
-    userDailyLogs[currentUser] = userDailyLogs[currentUser].filter(c => c.id !== id);
+    const slot = getActiveDaySlot(currentUser, selectedDayKey);
+    slot.entries = slot.entries.filter(c => c.id !== id);
     renderDailyChart();
     persistDailyLog();
   }
 
   function clearDailyLog() {
-    if (confirm(`Reset daily totals for ${currentUser}?`)) {
-      userDailyLogs[currentUser] = [];
+    if (confirm(`Reset daily chart & 7-day history for ${currentUser}?`)) {
+      userWeekHistory[currentUser] = createEmptyWeekMap();
+      userWeekHistory[currentUser][activeTodayKey] = { dateKey: activeDateKey, entries: [] };
+      selectedDayKey = activeTodayKey;
       renderDailyChart();
       persistDailyLog();
     }
@@ -2702,7 +3165,8 @@
 
   function updateDailyTotalsOnly() {
     let totalCal = 0, totalProt = 0;
-    userDailyLogs[currentUser].forEach(entry => {
+    const log = getActiveDailyEntries();
+    log.forEach(entry => {
       totalCal += entry.calories * entry.qty;
       totalProt += entry.protein * entry.qty;
     });
@@ -2771,12 +3235,14 @@
   }
 
   function renderDailyChart() {
+    renderWeekHistoryStrip();
     const list = document.getElementById("dailyChartList");
     list.innerHTML = "";
-    const log = userDailyLogs[currentUser];
+    const log = getActiveDailyEntries();
 
     if (log.length === 0) {
-      list.innerHTML = `<div class="empty-state">${currentUser}'s daily log is empty. Use "+ Add to Total" on Item Calculation.</div>`;
+      const dayLabel = selectedDayKey === activeTodayKey ? "today" : `on ${selectedDayKey}`;
+      list.innerHTML = `<div class="empty-state">${currentUser}'s log for ${dayLabel} is empty. Use "+ Add to Today" on Item Calculation.</div>`;
       updateDailyTotalsOnly();
       return;
     }
@@ -3125,6 +3591,7 @@
     updateTotalsOnly();
   }
 
+  loadLocalNotes();
   switchUser(currentUser);
   loadAllData();
   renderChart();
