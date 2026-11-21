@@ -2489,8 +2489,8 @@
 
   function getTimeBasedDefaultName() {
     const hour = new Date().getHours();
-    if (hour >= 5 && hour < 11) return "Breakfast";
-    if (hour >= 11 && hour < 17) return "Lunch";
+    if (hour >= 0 && hour < 14) return "Breakfast";
+    if (hour >= 14 && hour < 17) return "Lunch";
     return "Dinner";
   }
 
@@ -3154,10 +3154,13 @@
   }
 
   function clearDailyLog() {
-    if (confirm(`Reset daily chart & 7-day history for ${currentUser}?`)) {
-      userWeekHistory[currentUser] = createEmptyWeekMap();
-      userWeekHistory[currentUser][activeTodayKey] = { dateKey: activeDateKey, entries: [] };
-      selectedDayKey = activeTodayKey;
+    const dayLabel = selectedDayKey === activeTodayKey ? `Today (${selectedDayKey})` : selectedDayKey;
+    if (confirm(`Reset ${currentUser}'s chart for ${dayLabel}?`)) {
+      const slot = getActiveDaySlot(currentUser, selectedDayKey);
+      slot.entries = [];
+      if (!slot.dateKey && selectedDayKey === activeTodayKey) {
+        slot.dateKey = activeDateKey;
+      }
       renderDailyChart();
       persistDailyLog();
     }
